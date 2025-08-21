@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
-import { currentUser } from '@clerk/nextjs/server';
+import { redirect } from "next/navigation";
+import { currentUser } from "@clerk/nextjs/server";
 
 export default async function AdminLayout({
   children,
@@ -7,11 +7,17 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const user = await currentUser();
-  
-  // This is a basic check - you should implement proper role checking
-  // via Clerk's public metadata or a database lookup
+
   if (!user) {
-    redirect('/sign-in');
+    redirect("/sign-in");
+  }
+
+  // Enforce admin role via Clerk metadata
+  const role =
+    (user.publicMetadata as any)?.role || (user.privateMetadata as any)?.role;
+  const isAdmin = role === "admin";
+  if (!isAdmin) {
+    redirect("/dashboard");
   }
 
   return <>{children}</>;

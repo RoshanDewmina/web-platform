@@ -21,6 +21,9 @@ export async function GET(
       where: { courseId },
       include: {
         lessons: {
+          include: {
+            slides: { include: { blocks: true }, orderBy: { orderIndex: 'asc' } },
+          },
           orderBy: {
             orderIndex: 'asc',
           },
@@ -47,12 +50,15 @@ export async function POST(
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const { userId, sessionClaims } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // TODO: Check if user is admin
+    const role = (sessionClaims as any)?.metadata?.role || (sessionClaims as any)?.publicMetadata?.role;
+    if (role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { courseId } = await params;
     const body = await request.json();
     const { title, description, orderIndex } = body;

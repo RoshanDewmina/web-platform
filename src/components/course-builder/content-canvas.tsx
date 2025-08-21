@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Plus,
   Type,
@@ -26,11 +26,11 @@ import {
   Trash,
   Copy,
   Settings,
-} from 'lucide-react';
-import { Slide, ContentBlock, ContentBlockType } from '@/types/course-builder';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
-import { ContentBlockEditor } from './content-block-editor';
+} from "lucide-react";
+import { Slide, ContentBlock, ContentBlockType } from "@/types/course-builder";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { ContentBlockEditor } from "./content-block-editor";
 import {
   DndContext,
   closestCenter,
@@ -39,14 +39,15 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { SortableItem } from './sortable-item';
+} from "@dnd-kit/sortable";
+import { SortableItem } from "./sortable-item";
+import { TemplatePicker } from "./template-picker";
 
 interface ContentCanvasProps {
   slide: Slide | null;
@@ -55,15 +56,22 @@ interface ContentCanvasProps {
   onUpdateSlide: (slide: Slide) => void;
 }
 
-const contentBlockTypes: { type: ContentBlockType; label: string; icon: any }[] = [
-  { type: 'text', label: 'Text', icon: Type },
-  { type: 'image', label: 'Image', icon: Image },
-  { type: 'video', label: 'Video', icon: Video },
-  { type: 'code', label: 'Code', icon: Code },
-  { type: 'quiz', label: 'Quiz', icon: FileText },
-  { type: 'columns', label: 'Columns', icon: Columns },
-  { type: 'callout', label: 'Callout', icon: AlertCircle },
-  { type: 'divider', label: 'Divider', icon: Minus },
+const contentBlockTypes: {
+  type: ContentBlockType;
+  label: string;
+  icon: any;
+}[] = [
+  { type: "text", label: "Text", icon: Type },
+  { type: "image", label: "Image", icon: Image },
+  { type: "video", label: "Video", icon: Video },
+  { type: "code", label: "Code", icon: Code },
+  { type: "quiz", label: "Quiz", icon: FileText },
+  { type: "columns", label: "Columns", icon: Columns },
+  { type: "callout", label: "Callout", icon: AlertCircle },
+  { type: "divider", label: "Divider", icon: Minus },
+  { type: "audio", label: "Audio", icon: Minus },
+  { type: "iframe", label: "Iframe", icon: Minus },
+  { type: "file", label: "File", icon: Minus },
 ];
 
 export function ContentCanvas({
@@ -85,7 +93,9 @@ export function ContentCanvas({
     const { active, over } = event;
 
     if (active.id !== over?.id && slide) {
-      const oldIndex = slide.blocks.findIndex((block) => block.id === active.id);
+      const oldIndex = slide.blocks.findIndex(
+        (block) => block.id === active.id
+      );
       const newIndex = slide.blocks.findIndex((block) => block.id === over?.id);
 
       const newBlocks = arrayMove(slide.blocks, oldIndex, newIndex).map(
@@ -107,8 +117,8 @@ export function ContentCanvas({
       type,
       content: getDefaultContent(type),
       settings: {
-        width: 'full',
-        alignment: 'left',
+        width: "full",
+        alignment: "left",
       },
       order: slide.blocks.length,
     };
@@ -170,13 +180,13 @@ export function ContentCanvas({
 
   if (!slide) {
     return (
-      <div className='h-full flex items-center justify-center bg-muted/10'>
-        <div className='text-center'>
-          <Layout className='h-12 w-12 mx-auto mb-4 text-muted-foreground/50' />
-          <h3 className='text-lg font-medium text-muted-foreground'>
+      <div className="h-full flex items-center justify-center bg-muted/10">
+        <div className="text-center">
+          <Layout className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+          <h3 className="text-lg font-medium text-muted-foreground">
             No slide selected
           </h3>
-          <p className='text-sm text-muted-foreground mt-2'>
+          <p className="text-sm text-muted-foreground mt-2">
             Select a slide from the outline to start editing
           </p>
         </div>
@@ -185,19 +195,19 @@ export function ContentCanvas({
   }
 
   return (
-    <div className='h-full flex flex-col bg-background'>
+    <div className="h-full flex flex-col bg-background">
       {/* Canvas Header */}
-      <div className='border-b px-4 py-2'>
-        <div className='flex items-center justify-between'>
-          <h3 className='font-medium'>{slide.title}</h3>
+      <div className="border-b px-4 py-2">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium">{slide.title}</h3>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size='sm'>
-                <Plus className='h-4 w-4 mr-2' />
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
                 Add Block
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-48'>
+            <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuLabel>Content Blocks</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {contentBlockTypes.map((item) => (
@@ -205,42 +215,60 @@ export function ContentCanvas({
                   key={item.type}
                   onClick={() => addContentBlock(item.type)}
                 >
-                  <item.icon className='h-4 w-4 mr-2' />
+                  <item.icon className="h-4 w-4 mr-2" />
                   {item.label}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        {/* Templates */}
+        <div className="mt-2">
+          <TemplatePicker
+            onApplyToSlide={(template) => {
+              if (!slide) return;
+              const blocks: ContentBlock[] = (
+                template.blockStructure || []
+              ).map((b: any, i: number) => ({
+                id: `block-${Date.now()}-${i}`,
+                type: b.type,
+                content: b.content || {},
+                settings: b.settings || {},
+                order: i,
+              }));
+              onUpdateSlide({ ...slide, blocks });
+            }}
+          />
+        </div>
       </div>
 
       {/* Canvas Content */}
-      <ScrollArea className='flex-1'>
-        <div className='p-8 max-w-4xl mx-auto'>
+      <ScrollArea className="flex-1">
+        <div className="p-8 max-w-4xl mx-auto">
           {slide.blocks.length === 0 ? (
-            <Card className='p-12 border-dashed'>
-              <div className='text-center'>
-                <Plus className='h-12 w-12 mx-auto mb-4 text-muted-foreground/50' />
-                <h3 className='text-lg font-medium text-muted-foreground'>
+            <Card className="p-12 border-dashed">
+              <div className="text-center">
+                <Plus className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="text-lg font-medium text-muted-foreground">
                   Add your first content block
                 </h3>
-                <p className='text-sm text-muted-foreground mt-2 mb-4'>
+                <p className="text-sm text-muted-foreground mt-2 mb-4">
                   Click the "Add Block" button to get started
                 </p>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant='outline'>
-                      <Plus className='h-4 w-4 mr-2' />
+                    <Button variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
                       Add Block
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className='w-48'>
+                  <DropdownMenuContent className="w-48">
                     {contentBlockTypes.map((item) => (
                       <DropdownMenuItem
                         key={item.type}
                         onClick={() => addContentBlock(item.type)}
                       >
-                        <item.icon className='h-4 w-4 mr-2' />
+                        <item.icon className="h-4 w-4 mr-2" />
                         {item.label}
                       </DropdownMenuItem>
                     ))}
@@ -258,16 +286,16 @@ export function ContentCanvas({
                 items={slide.blocks.map((b) => b.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className='space-y-4'>
+                <div className="space-y-4">
                   {slide.blocks.map((block) => (
                     <SortableItem key={block.id} id={block.id}>
                       <div
                         className={cn(
-                          'group relative rounded-lg border transition-all',
+                          "group relative rounded-lg border transition-all",
                           selectedBlock?.id === block.id
-                            ? 'border-primary ring-2 ring-primary/20'
-                            : 'border-border hover:border-primary/50',
-                          hoveredBlock === block.id && 'shadow-md'
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-border hover:border-primary/50",
+                          hoveredBlock === block.id && "shadow-md"
                         )}
                         onClick={() => onSelectBlock(block)}
                         onMouseEnter={() => setHoveredBlock(block.id)}
@@ -276,48 +304,50 @@ export function ContentCanvas({
                         {/* Block Toolbar */}
                         <div
                           className={cn(
-                            'absolute -top-10 right-0 flex items-center gap-1 bg-background border rounded-md p-1 opacity-0 transition-opacity',
+                            "absolute -top-10 right-0 flex items-center gap-1 bg-background border rounded-md p-1 opacity-0 transition-opacity",
                             (hoveredBlock === block.id ||
                               selectedBlock?.id === block.id) &&
-                              'opacity-100'
+                              "opacity-100"
                           )}
                         >
                           <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-7 w-7 cursor-move'
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 cursor-move"
                           >
-                            <GripVertical className='h-4 w-4' />
+                            <GripVertical className="h-4 w-4" />
                           </Button>
                           <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-7 w-7'
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
                             onClick={(e) => {
                               e.stopPropagation();
                               duplicateBlock(block.id);
                             }}
                           >
-                            <Copy className='h-3 w-3' />
+                            <Copy className="h-3 w-3" />
                           </Button>
                           <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-7 w-7'
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteBlock(block.id);
                             }}
                           >
-                            <Trash className='h-3 w-3' />
+                            <Trash className="h-3 w-3" />
                           </Button>
                         </div>
 
                         {/* Block Content */}
-                        <div className='p-4'>
+                        <div className="p-4">
                           <ContentBlockEditor
                             block={block}
-                            onUpdate={(updates) => updateBlock(block.id, updates)}
+                            onUpdate={(updates) =>
+                              updateBlock(block.id, updates)
+                            }
                           />
                         </div>
                       </div>
@@ -335,22 +365,28 @@ export function ContentCanvas({
 
 function getDefaultContent(type: ContentBlockType): any {
   switch (type) {
-    case 'text':
-      return { text: 'Enter your text here...' };
-    case 'image':
-      return { url: '', alt: '' };
-    case 'video':
-      return { url: '', provider: 'youtube' };
-    case 'code':
-      return { code: '', language: 'javascript' };
-    case 'quiz':
+    case "text":
+      return { text: "Enter your text here..." };
+    case "image":
+      return { url: "", alt: "" };
+    case "video":
+      return { url: "", provider: "youtube" };
+    case "audio":
+      return { url: "", title: "" };
+    case "iframe":
+      return { src: "", height: 400 };
+    case "file":
+      return { url: "", fileName: "" };
+    case "code":
+      return { code: "", language: "javascript" };
+    case "quiz":
       return { questions: [] };
-    case 'columns':
+    case "columns":
       return { columns: 2, content: [] };
-    case 'callout':
-      return { type: 'info', content: '' };
-    case 'divider':
-      return { style: 'solid' };
+    case "callout":
+      return { type: "info", content: "" };
+    case "divider":
+      return { style: "solid" };
     default:
       return {};
   }

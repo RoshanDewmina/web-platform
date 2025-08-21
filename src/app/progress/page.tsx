@@ -53,9 +53,43 @@ import {
   Radar,
 } from "recharts";
 import { useUser } from "@clerk/nextjs";
+import { LeaderboardCard } from "./_components/leaderboard";
+import { Heatmap } from "./_components/heatmap";
+import { useEffect, useState } from "react";
 
 export default function ProgressPage() {
   const { user } = useUser();
+  const [daily, setDaily] = useState<{ date: string; minutes: number }[]>([]);
+  const [byDow, setByDow] = useState<any[]>([]);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoadingAnalytics(true);
+      try {
+        const res = await fetch("/api/analytics/progress?rangeDays=120");
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted) {
+            setDaily(
+              (data.daily || []).map((d: any) => ({
+                date: d.date,
+                minutes: d.minutes,
+              }))
+            );
+            setByDow(data.byDow || []);
+          }
+        }
+      } finally {
+        setLoadingAnalytics(false);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]);
 
   // Mock data - will be replaced with real data from API
   const weeklyData = [
@@ -381,6 +415,9 @@ export default function ProgressPage() {
               </Card>
             </div>
 
+            {/* Heatmap */}
+            <Heatmap title="Last 13 Weeks" daily={daily} />
+
             {/* Course Progress */}
             <Card>
               <CardHeader>
@@ -457,70 +494,7 @@ export default function ProgressPage() {
 
           {/* Leaderboard Tab */}
           <TabsContent value="leaderboard" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Weekly Leaderboard</CardTitle>
-                <CardDescription>Top performers this week</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px] pr-4">
-                  <div className="space-y-3">
-                    {leaderboard.map((user) => (
-                      <div
-                        key={user.rank}
-                        className={`flex items-center justify-between p-3 rounded-lg ${
-                          user.isCurrentUser
-                            ? "bg-primary/10 border border-primary"
-                            : "hover:bg-accent"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8">
-                            {user.rank === 1 && (
-                              <Crown className="h-6 w-6 text-yellow-500" />
-                            )}
-                            {user.rank === 2 && (
-                              <Medal className="h-6 w-6 text-gray-400" />
-                            )}
-                            {user.rank === 3 && (
-                              <Medal className="h-6 w-6 text-orange-600" />
-                            )}
-                            {user.rank > 3 && (
-                              <span className="text-lg font-bold text-muted-foreground">
-                                #{user.rank}
-                              </span>
-                            )}
-                          </div>
-                          <Avatar>
-                            <AvatarImage src={user.avatar} />
-                            <AvatarFallback>{user.name[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">
-                              {user.isCurrentUser ? "You" : user.name}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Level {user.level}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {user.trend === "up" && (
-                            <TrendingUp className="h-4 w-4 text-green-500" />
-                          )}
-                          {user.trend === "down" && (
-                            <TrendingUp className="h-4 w-4 text-red-500 rotate-180" />
-                          )}
-                          <span className="font-bold">
-                            {user.xp.toLocaleString()} XP
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            <LeaderboardCard />
           </TabsContent>
 
           {/* Statistics Tab */}

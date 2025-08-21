@@ -27,9 +27,18 @@ export async function GET(request: NextRequest) {
       where.category = category;
     }
 
-    // If not admin, only show published courses
+    // If not admin, only show published and visible courses, and not before schedule
     if (!isAdmin) {
-      where.isPublished = true;
+      where.AND = [
+        { isPublished: true },
+        {
+          OR: [
+            { scheduledPublishAt: null },
+            { scheduledPublishAt: { lte: new Date() } },
+          ],
+        },
+        { visibility: 'PUBLIC' },
+      ];
     }
 
     const courses = await prisma.course.findMany({
@@ -37,7 +46,17 @@ export async function GET(request: NextRequest) {
       include: {
         modules: {
           include: {
-            lessons: true,
+            lessons: {
+              include: {
+                slides: {
+                  include: {
+                    blocks: true,
+                  },
+                  orderBy: { orderIndex: 'asc' },
+                },
+              },
+              orderBy: { orderIndex: 'asc' },
+            },
           },
         },
         enrollments: {
@@ -69,27 +88,34 @@ export async function GET(request: NextRequest) {
 // POST /api/courses - Create a new course (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId, sessionClaims } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // TODO: Check if user is admin
-    // For now, we'll assume the user is admin if they can access this endpoint
+    const role = (sessionClaims as any)?.metadata?.role || (sessionClaims as any)?.publicMetadata?.role;
+    if (role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const body = await request.json();
-    const { title, description, thumbnail, difficulty, estimatedHours, category, tags } = body;
+    const { title, description, thumbnail, difficulty, estimatedHours, category, tags, visibility, scheduledPublishAt, accessControl, enrollmentLimit, price } = body;
 
     const course = await prisma.course.create({
       data: {
         title,
         description,
-        thumbnail,
+        thumbnail: thumbnail ?? null,
         difficulty,
         estimatedHours,
         category,
         tags,
         isPublished: false,
+        visibility: (visibility || 'PUBLIC'),
+        scheduledPublishAt: scheduledPublishAt ? new Date(scheduledPublishAt) : null,
+        accessControl: accessControl ?? null,
+        enrollmentLimit: enrollmentLimit ?? null,
+        price: price ?? 0,
       },
     });
 
@@ -100,5 +126,124 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to create course' },
       { status: 500 }
     );
+  }
+}
+
+// POST /api/courses:bulk - Bulk operations (publish/unpublish, duplicate, archive)
+export async function PUT(request: NextRequest) {
+  try {
+    const { userId, sessionClaims } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const role = (sessionClaims as any)?.metadata?.role || (sessionClaims as any)?.publicMetadata?.role;
+    if (role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    const body = await request.json();
+    const { action, courseIds } = body as { action: 'publish' | 'unpublish' | 'archive' | 'duplicate'; courseIds: string[] };
+    if (!action || !Array.isArray(courseIds) || courseIds.length === 0) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+
+    if (action === 'publish' || action === 'unpublish' || action === 'archive') {
+      const isPublished = action === 'publish' ? true : action === 'unpublish' ? false : undefined;
+      if (isPublished !== undefined) {
+        await prisma.course.updateMany({ where: { id: { in: courseIds } }, data: { isPublished } });
+      } else {
+        // Archive flag can be modeled via category or add a new field; for now, set category suffix
+        await Promise.all(
+          courseIds.map((id) =>
+            prisma.course.update({ where: { id }, data: { category: 'archived' } })
+          )
+        );
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === 'duplicate') {
+      const duplicated: string[] = [];
+      for (const id of courseIds) {
+        const base = await prisma.course.findUnique({
+          where: { id },
+          include: {
+            modules: {
+              include: {
+                lessons: {
+                  include: {
+                    slides: { include: { blocks: true } },
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (!base) continue;
+
+        const newCourse = await prisma.course.create({
+          data: {
+            title: `${base.title} (Copy)`,
+            description: base.description,
+            thumbnail: base.thumbnail ?? undefined,
+            difficulty: base.difficulty,
+            estimatedHours: base.estimatedHours,
+            category: base.category,
+            tags: base.tags,
+            isPublished: false,
+          },
+        });
+
+        for (const m of base.modules) {
+          const newModule = await prisma.module.create({
+            data: {
+              courseId: newCourse.id,
+              title: m.title,
+              description: m.description ?? undefined,
+              orderIndex: m.orderIndex,
+            },
+          });
+          for (const l of m.lessons) {
+            const newLesson = await prisma.lesson.create({
+              data: {
+                moduleId: newModule.id,
+                title: l.title,
+                description: l.description ?? undefined,
+                content: l.content,
+                videoUrl: l.videoUrl ?? undefined,
+                duration: l.duration ?? undefined,
+                orderIndex: l.orderIndex,
+                xpReward: l.xpReward,
+              },
+            });
+            for (const s of l.slides) {
+              const newSlide = await prisma.slide.create({
+                data: {
+                  lessonId: newLesson.id,
+                  title: s.title,
+                  notes: s.notes ?? undefined,
+                  template: s.template ?? undefined,
+                  orderIndex: s.orderIndex,
+                },
+              });
+              for (const b of s.blocks) {
+                await prisma.contentBlock.create({
+                  data: {
+                    slideId: newSlide.id,
+                    type: b.type,
+                    content: b.content,
+                    settings: b.settings ?? undefined,
+                    orderIndex: b.orderIndex,
+                  },
+                });
+              }
+            }
+          }
+        }
+        duplicated.push(newCourse.id);
+      }
+      return NextResponse.json({ duplicated });
+    }
+
+    return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
+  } catch (error) {
+    console.error('Error in bulk operation:', error);
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }

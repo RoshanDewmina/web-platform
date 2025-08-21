@@ -6,6 +6,9 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhook(.*)',
+  // Public APIs for local dev and Docker health checks
+  '/api/storage(.*)',
+  '/api/ai(.*)',
 ]);
 
 const isAdminRoute = createRouteMatcher([

@@ -1,0 +1,147 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e15]: EduLearn
+        - generic [ref=e16]:
+          - button "Toggle theme" [ref=e17]:
+            - img
+            - generic [ref=e18]: Toggle theme
+          - link "Sign In" [ref=e19] [cursor=pointer]:
+            - /url: /sign-in
+            - button "Sign In" [ref=e20]
+          - link "Get Started" [ref=e21] [cursor=pointer]:
+            - /url: /sign-up
+            - button "Get Started" [ref=e22]
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - img
+        - text: AI-Powered Learning Platform
+      - heading "Learn Smarter, Not Harder" [level=1] [ref=e26]
+      - paragraph [ref=e27]: Experience personalized education with AI tutoring, gamification, and social learning. Master any subject at your own pace with our intelligent learning system.
+      - generic [ref=e28]:
+        - link "Start Learning Free" [ref=e29] [cursor=pointer]:
+          - /url: /sign-up
+          - button "Start Learning Free" [ref=e30]:
+            - text: Start Learning Free
+            - img
+        - link "Explore Features" [ref=e31] [cursor=pointer]:
+          - /url: "#features"
+          - button "Explore Features" [ref=e32]
+    - generic [ref=e34]:
+      - generic [ref=e36]:
+        - img [ref=e37]
+        - generic [ref=e42]: 50K+
+        - generic [ref=e43]: Active Learners
+      - generic [ref=e45]:
+        - img [ref=e46]
+        - generic [ref=e48]: 500+
+        - generic [ref=e49]: Courses Available
+      - generic [ref=e51]:
+        - img [ref=e52]
+        - generic [ref=e56]: 94%
+        - generic [ref=e57]: Completion Rate
+      - generic [ref=e59]:
+        - img [ref=e60]
+        - generic [ref=e68]: 1M+
+        - generic [ref=e69]: AI Interactions
+    - generic [ref=e70]:
+      - generic [ref=e71]:
+        - heading "Everything You Need to Succeed" [level=2] [ref=e72]
+        - paragraph [ref=e73]: Powerful features designed to accelerate your learning journey
+      - generic [ref=e74]:
+        - generic [ref=e76]:
+          - img [ref=e77]
+          - heading "AI Personal Tutor" [level=3] [ref=e85]
+          - paragraph [ref=e86]: Get instant help, explanations, and personalized guidance from our AI assistant.
+        - generic [ref=e88]:
+          - img [ref=e89]
+          - heading "Gamification & Rewards" [level=3] [ref=e95]
+          - paragraph [ref=e96]: Earn badges, maintain streaks, and climb leaderboards as you progress.
+        - generic [ref=e98]:
+          - img [ref=e99]
+          - heading "Social Learning" [level=3] [ref=e104]
+          - paragraph [ref=e105]: Connect with peers, join study groups, and learn together.
+        - generic [ref=e107]:
+          - img [ref=e108]
+          - heading "Adaptive Learning" [level=3] [ref=e110]
+          - paragraph [ref=e111]: Content adjusts to your pace and learning style automatically.
+        - generic [ref=e113]:
+          - img [ref=e114]
+          - heading "Progress Tracking" [level=3] [ref=e118]
+          - paragraph [ref=e119]: Visualize your learning journey with detailed analytics and insights.
+        - generic [ref=e121]:
+          - img [ref=e122]
+          - heading "Learn Anywhere" [level=3] [ref=e125]
+          - paragraph [ref=e126]: Access your courses on any device, anytime, anywhere.
+    - generic [ref=e127]:
+      - generic [ref=e128]:
+        - heading "Loved by Learners Worldwide" [level=2] [ref=e129]
+        - paragraph [ref=e130]: Join thousands who have transformed their learning experience
+      - generic [ref=e131]:
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - img [ref=e135]
+            - img [ref=e137]
+            - img [ref=e139]
+            - img [ref=e141]
+            - img [ref=e143]
+          - paragraph [ref=e145]: "\"The AI tutor is incredible! It's like having a personal teacher available 24/7.\""
+          - generic [ref=e146]:
+            - generic [ref=e147]: Sarah Johnson
+            - generic [ref=e148]: Computer Science Student
+        - generic [ref=e150]:
+          - generic [ref=e151]:
+            - img [ref=e152]
+            - img [ref=e154]
+            - img [ref=e156]
+            - img [ref=e158]
+            - img [ref=e160]
+          - paragraph [ref=e162]: "\"Gamification keeps me motivated. I've maintained a 30-day streak!\""
+          - generic [ref=e163]:
+            - generic [ref=e164]: Mike Chen
+            - generic [ref=e165]: Professional Developer
+        - generic [ref=e167]:
+          - generic [ref=e168]:
+            - img [ref=e169]
+            - img [ref=e171]
+            - img [ref=e173]
+            - img [ref=e175]
+            - img [ref=e177]
+          - paragraph [ref=e179]: "\"The adaptive learning system perfectly matches each student's pace.\""
+          - generic [ref=e180]:
+            - generic [ref=e181]: Emma Davis
+            - generic [ref=e182]: High School Teacher
+    - generic [ref=e185]:
+      - heading "Ready to Transform Your Learning?" [level=2] [ref=e186]
+      - paragraph [ref=e187]: Join thousands of learners and start your journey today
+      - link "Get Started for Free" [ref=e188] [cursor=pointer]:
+        - /url: /sign-up
+        - button "Get Started for Free" [ref=e189]:
+          - text: Get Started for Free
+          - img
+    - contentinfo [ref=e190]:
+      - generic [ref=e191]:
+        - generic [ref=e192]:
+          - generic [ref=e193]:
+            - img [ref=e194]
+            - generic [ref=e202]: EduLearn
+          - generic [ref=e203]:
+            - link "Privacy" [ref=e204] [cursor=pointer]:
+              - /url: "#"
+            - link "Terms" [ref=e205] [cursor=pointer]:
+              - /url: "#"
+            - link "Contact" [ref=e206] [cursor=pointer]:
+              - /url: "#"
+            - link "About" [ref=e207] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=e208]: © 2024 EduLearn. All rights reserved.
+  - button [ref=e210]:
+    - img
+  - alert [ref=e211]
+```

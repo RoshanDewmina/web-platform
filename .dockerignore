@@ -1,0 +1,13 @@
+# Docker ignore
+node_modules
+.next
+.git
+.env.local
+.env
+coverage
+playwright-report
+**/.DS_Store
+**/npm-debug.log
+**/yarn-error.log
+**/pnpm-debug.log
+**/bun.lockb
