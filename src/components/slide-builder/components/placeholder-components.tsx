@@ -30,7 +30,7 @@ export function TitleComponent({
   color = "inherit",
   ...props
 }: any) {
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+  const Tag = `h${level}` as keyof React.JSX.IntrinsicElements;
   return (
     <Tag
       className="w-full font-bold outline-none cursor-text hover:bg-muted/50 rounded px-2 py-1 transition-colors"

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { CourseContent } from "./_components/course-content";
 import { renewableEnergyOntarioCourse } from "@/lib/course-data/renewable-energy-ontario";
 import { Course } from "@/lib/course-data/renewable-energy-ontario";
@@ -31,37 +30,29 @@ export default function CoursePage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-48 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-32"></div>
-            </div>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-48 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-32"></div>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   if (!course) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">Course not found</h2>
-            <p className="text-muted-foreground">
-              The course you're looking for doesn't exist.
-            </p>
-          </div>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Course not found</h2>
+          <p className="text-muted-foreground">
+            The course you're looking for doesn't exist.
+          </p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
-  return (
-    <DashboardLayout>
-      <CourseContent course={course} />
-    </DashboardLayout>
-  );
+  return <CourseContent course={course} />;
 }

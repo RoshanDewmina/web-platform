@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 const ChatWidget = dynamic(
   () => import("@/components/ai/chat-widget").then((m) => m.ChatWidget),
@@ -45,12 +46,14 @@ import { Roadmap } from "./_components/roadmap";
 export default function LearnPage() {
   // Client page: avoid pre-rendering personalized content
   // Mark as dynamic to leverage client-side data fetching
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
+  const [coursesData, setCoursesData] = useState<any[]>([]);
 
   // Mock data - will be replaced with real data from API
-  const courses = [
+  const initialCourses = [
     {
       id: "renewable-energy-ontario",
       title: "Community Renewable Energy Projects in Ontario",
@@ -171,6 +174,24 @@ export default function LearnPage() {
       completedModules: 0,
     },
   ];
+
+  // Initialize courses state
+  useState(() => {
+    setCoursesData(initialCourses);
+  });
+
+  // Handle course enrollment
+  const handleEnroll = (courseId: string) => {
+    setCoursesData((prev) =>
+      prev.map((course) =>
+        course.id === courseId
+          ? { ...course, enrolled: true, progress: 0 }
+          : course
+      )
+    );
+  };
+
+  const courses = coursesData;
 
   const categories = [
     "All Categories",
@@ -366,9 +387,15 @@ export default function LearnPage() {
                         </Button>
                       </Link>
                     ) : (
-                      <Button className="w-full" variant="outline">
-                        Enroll Now
-                      </Button>
+                      <Link href={`/learn/course/${course.id}`} className="w-full">
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={() => handleEnroll(course.id)}
+                        >
+                          Enroll Now
+                        </Button>
+                      </Link>
                     )}
                   </CardFooter>
                 </Card>

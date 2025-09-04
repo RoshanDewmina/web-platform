@@ -5,6 +5,12 @@ export interface CourseSlide {
   visualPlaceholder?: string;
   type?: 'content' | 'video' | 'interactive' | 'quiz';
   notes?: string[];
+  media?: {
+    type: 'image' | 'youtube';
+    src: string; // Image path or YouTube URL/ID
+    alt?: string;
+    caption?: string;
+  };
 }
 
 export interface SubModule {
@@ -32,6 +38,60 @@ export const renewableEnergyOntarioCourse: Course = {
   subtitle: "How can Communities develop Renewable Energy Projects in Ontario's existing regulatory framework",
   modules: [
     {
+      id: "module-0",
+      title: "Getting Started",
+      subModules: [
+        {
+          id: "submodule-0-1",
+          title: "Course Registration & Overview",
+          slides: [
+            {
+              id: "slide-0-1",
+              title: "Welcome & Registration",
+              content: `
+## Welcome to Your Energy Journey!
+
+This course will guide you through developing renewable energy projects in your community.
+
+**First, let's get you registered** to receive:
+- Free PV assessment report
+- Personalized project recommendations
+- Access to funding opportunities
+- Ongoing support throughout your journey
+
+Complete the registration form below to get started.
+              `,
+              type: 'interactive'
+            },
+            {
+              id: "slide-0-2",
+              title: "How to Use This Course",
+              content: `
+## Your Learning Path
+
+This comprehensive course covers everything you need to know about renewable energy project development in Indigenous communities.
+
+Navigate through the interactive overview below to understand what you'll learn and how to make the most of this course.
+              `,
+              type: 'interactive'
+            },
+            {
+              id: "slide-0-3",
+              title: "Success Story: Taykwa Tagamou Nation",
+              content: `
+## Learn from Leaders
+
+Before we begin, let's explore how Taykwa Tagamou Nation successfully developed their renewable energy project and became pioneers in the Indigenous energy transition.
+
+Their story demonstrates what's possible when communities take control of their energy future.
+              `,
+              type: 'interactive'
+            }
+          ]
+        }
+      ]
+    },
+    {
       id: "module-1",
       title: "Module 1: Introduction to Indigenous-Led Energy Projects",
       subModules: [
@@ -53,7 +113,12 @@ export const renewableEnergyOntarioCourse: Course = {
 - As per the 2030 Emissions Reduction Plan roadmap, it will reduce emissions by 40-45% from 2005 level by 2030
 - Through the plan, Canada is taking a sector-by-sector approach, with a strong focus on the building and electricity sectors
               `,
-              visualPlaceholder: "Space for visuals",
+              media: {
+                type: 'image',
+                src: '/course-assets/renewable-energy-ontario/images/paris-agreement-goals.png',
+                alt: 'Paris Agreement Climate Goals',
+                caption: 'Global commitment to limit warming to 1.5°C above pre-industrial levels'
+              },
               type: 'content'
             },
             {
@@ -183,7 +248,11 @@ Strong need will lead the community to stronger goals/vision. A strong vision gu
 
 Indigenous energy leaders share their experience and timelines to develop a CEP/Net Zero Plan (TTN)
               `,
-              visualPlaceholder: "Space for video interview",
+              media: {
+                type: 'youtube',
+                src: 'dQw4w9WgXcQ', // Replace with actual video ID
+                alt: 'Indigenous Energy Leaders Interview'
+              },
               type: 'video'
             }
           ]
@@ -971,13 +1040,10 @@ Indigenous energy leaders share their experience and timelines to develop a CEP/
 - Account for degradation
 - Target IRR: 8-15%
 
-### Sensitivity Analysis
-- Energy price changes
-- Performance variations
-- Cost overruns
-- Policy changes
+### Try the Interactive Calculator
+Use the calculator below to estimate payback period for your community's solar project.
               `,
-              type: 'content'
+              type: 'interactive'
             }
           ]
         }

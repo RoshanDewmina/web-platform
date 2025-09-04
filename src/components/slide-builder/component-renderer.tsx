@@ -16,9 +16,70 @@ import {
   Calendar,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { CustomComponentRenderer } from "./custom-component-renderer";
-import { useCustomComponent } from "./custom-component-renderer";
+import { CustomComponentRenderer, useCustomComponent } from "./custom-component-renderer";
 import { PlaceholderComponents } from "./components/placeholder-components";
+
+// Custom Component Wrapper that loads the component using the hook
+function CustomComponentWrapper({
+  componentId,
+  props,
+  width,
+  height,
+  previewMode,
+  className,
+  slideId,
+  elementId,
+  isEditing,
+  theme,
+}: {
+  componentId: string;
+  props: Record<string, any>;
+  width: number;
+  height: number;
+  previewMode?: boolean;
+  className?: string;
+  slideId: string;
+  elementId: string;
+  isEditing: boolean;
+  theme: Record<string, any>;
+}) {
+  const { component, isLoading, error } = useCustomComponent(componentId);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Skeleton className="w-full h-full" />
+      </div>
+    );
+  }
+
+  if (error || !component) {
+    return (
+      <Card className="w-full h-full flex items-center justify-center bg-red-50 dark:bg-red-900/20">
+        <div className="text-center p-4">
+          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {error || "Failed to load component"}
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <CustomComponentRenderer
+      component={component}
+      props={props}
+      theme={theme}
+      slideId={slideId}
+      elementId={elementId}
+      isPreview={previewMode || false}
+      isEditing={isEditing}
+      className={className}
+      style={{ width: `${width}px`, height: `${height}px` }}
+    />
+  );
+}
 
 // Component Registry - Maps component types to their implementations
 const componentRegistry: Record<string, React.ComponentType<any>> = {
@@ -73,12 +134,12 @@ export function ComponentRenderer({
   slideId = "",
   elementId = "",
   isEditing = false,
-  theme,
+  theme = {},
 }: ComponentRendererProps) {
   // Handle custom components
   if (customComponentId) {
     return (
-      <CustomComponentRenderer
+      <CustomComponentWrapper
         componentId={customComponentId}
         props={props}
         width={width}
