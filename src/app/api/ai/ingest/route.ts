@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import OpenAI from 'openai';
 import { QdrantClient } from '@qdrant/js-client-rest';
 
-const prisma = new PrismaClient();
 
 function chunkText(text: string, maxChars = 1500, overlap = 200): string[] {
   const chunks: string[] = [];

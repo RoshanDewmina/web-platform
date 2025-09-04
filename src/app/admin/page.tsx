@@ -11,6 +11,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
@@ -20,6 +29,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Plus,
   Search,
@@ -36,10 +53,14 @@ import {
   BarChart,
   FileText,
   Settings,
+  Shield,
+  Save,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { AdminUserManager } from "@/components/admin/admin-user-manager";
+import { useRouter } from "next/navigation";
 
 type ApiCourse = {
   id: string;
@@ -53,9 +74,20 @@ type ApiCourse = {
 };
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [courses, setCourses] = useState<ApiCourse[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [courseData, setCourseData] = useState({
+    title: "",
+    description: "",
+    category: "",
+    difficulty: "BEGINNER",
+    estimatedHours: 1,
+    price: 0,
+    visibility: "PUBLIC",
+  });
 
   const loadCourses = async () => {
     setLoading(true);
@@ -74,6 +106,59 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadCourses();
   }, []);
+
+  const handleCreateCourse = async () => {
+    if (!courseData.title.trim()) {
+      toast.error("Course title is required");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/courses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(courseData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create course");
+      }
+
+      const course = await response.json();
+      toast.success("Course created successfully!");
+
+      // Reset form
+      setCourseData({
+        title: "",
+        description: "",
+        category: "",
+        difficulty: "BEGINNER",
+        estimatedHours: 1,
+        price: 0,
+        visibility: "PUBLIC",
+      });
+
+      setShowCreateDialog(false);
+
+      // Reload courses
+      await loadCourses();
+
+      // Redirect to the course builder
+      router.push(`/admin/courses/${course.id}/builder`);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create course"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const stats = useMemo(() => {
     const totalCourses = courses.length;
@@ -98,6 +183,38 @@ export default function AdminDashboard() {
   const filteredCourses = courses.filter((course) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Mock recent activity data
+  const recentActivity = [
+    {
+      id: "1",
+      action: "Course published",
+      course: "Introduction to React",
+      user: "John Doe",
+      time: "2 hours ago",
+    },
+    {
+      id: "2",
+      action: "New enrollment",
+      course: "Advanced TypeScript",
+      user: "Jane Smith",
+      time: "4 hours ago",
+    },
+    {
+      id: "3",
+      action: "Course updated",
+      course: "Web Development Basics",
+      user: "Mike Johnson",
+      time: "6 hours ago",
+    },
+    {
+      id: "4",
+      action: "User registered",
+      course: "N/A",
+      user: "Sarah Wilson",
+      time: "1 day ago",
+    },
+  ];
 
   const doAction = async (
     action: "publish" | "unpublish" | "archive" | "duplicate",
@@ -139,12 +256,161 @@ export default function AdminDashboard() {
               Manage courses, content, and monitor platform performance
             </p>
           </div>
-          <Link href="/admin/courses/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Course
-            </Button>
-          </Link>
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Course
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Create New Course</DialogTitle>
+                <DialogDescription>
+                  Set up the basic information for your new course
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Course Title *</Label>
+                  <Input
+                    id="title"
+                    value={courseData.title}
+                    onChange={(e) =>
+                      setCourseData({ ...courseData, title: e.target.value })
+                    }
+                    placeholder="Enter course title"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={courseData.description}
+                    onChange={(e) =>
+                      setCourseData({
+                        ...courseData,
+                        description: e.target.value,
+                      })
+                    }
+                    placeholder="Describe what students will learn in this course"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Input
+                      id="category"
+                      value={courseData.category}
+                      onChange={(e) =>
+                        setCourseData({
+                          ...courseData,
+                          category: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., Web Development"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="difficulty">Difficulty Level</Label>
+                    <Select
+                      value={courseData.difficulty}
+                      onValueChange={(value) =>
+                        setCourseData({ ...courseData, difficulty: value })
+                      }
+                    >
+                      <SelectTrigger id="difficulty">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BEGINNER">Beginner</SelectItem>
+                        <SelectItem value="INTERMEDIATE">
+                          Intermediate
+                        </SelectItem>
+                        <SelectItem value="ADVANCED">Advanced</SelectItem>
+                        <SelectItem value="EXPERT">Expert</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="estimatedHours">Estimated Hours</Label>
+                    <Input
+                      id="estimatedHours"
+                      type="number"
+                      min="0.5"
+                      step="0.5"
+                      value={courseData.estimatedHours}
+                      onChange={(e) =>
+                        setCourseData({
+                          ...courseData,
+                          estimatedHours: parseFloat(e.target.value) || 1,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price ($)</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={courseData.price}
+                      onChange={(e) =>
+                        setCourseData({
+                          ...courseData,
+                          price: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="visibility">Visibility</Label>
+                  <Select
+                    value={courseData.visibility}
+                    onValueChange={(value) =>
+                      setCourseData({ ...courseData, visibility: value })
+                    }
+                  >
+                    <SelectTrigger id="visibility">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PUBLIC">Public</SelectItem>
+                      <SelectItem value="PRIVATE">Private</SelectItem>
+                      <SelectItem value="RESTRICTED">Restricted</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCreateDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCreateCourse}
+                    disabled={loading || !courseData.title.trim()}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {loading ? "Creating..." : "Create Course"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Stats Overview */}
@@ -424,12 +690,6 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-2">
-                <Link href="/admin/courses/new">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Course
-                  </Button>
-                </Link>
                 <Button variant="outline" className="justify-start">
                   <FileText className="h-4 w-4 mr-2" />
                   Content Library
@@ -442,10 +702,28 @@ export default function AdminDashboard() {
                   <BarChart className="h-4 w-4 mr-2" />
                   Analytics
                 </Button>
+                <Button variant="outline" className="justify-start">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Admin User Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Admin User Management
+            </CardTitle>
+            <CardDescription>Manage admin privileges for users</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AdminUserManager />
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

@@ -1,0 +1,55 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e9]:
+          - heading "Sign in to Ai-Learning" [level=1] [ref=e10]
+          - paragraph [ref=e11]: Welcome back! Please sign in to continue
+        - generic [ref=e12]:
+          - button "Sign in with Google Continue with Google" [ref=e15] [cursor=pointer]:
+            - generic [ref=e16] [cursor=pointer]:
+              - img "Sign in with Google" [ref=e18] [cursor=pointer]
+              - generic [ref=e19] [cursor=pointer]: Continue with Google
+          - paragraph [ref=e22]: or
+          - generic [ref=e24]:
+            - generic [ref=e25]:
+              - generic [ref=e28]:
+                - generic [ref=e30]: Email address or username
+                - textbox "Email address or username" [ref=e31]
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Password
+                    - generic:
+                      - textbox "Password"
+                      - button "Show password":
+                        - img
+            - button "Continue" [ref=e33] [cursor=pointer]:
+              - generic [ref=e34] [cursor=pointer]:
+                - text: Continue
+                - img [ref=e35] [cursor=pointer]
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e39]: Don’t have an account?
+          - link "Sign up" [ref=e40] [cursor=pointer]:
+            - /url: https://evolved-flamingo-93.accounts.dev/sign-up#/?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard
+        - generic [ref=e42]:
+          - generic [ref=e44]:
+            - paragraph [ref=e45]: Secured by
+            - link "Clerk logo" [ref=e46] [cursor=pointer]:
+              - /url: https://go.clerk.com/components
+              - img [ref=e47] [cursor=pointer]
+          - paragraph [ref=e52]: Development mode
+    - status "Development environment notification" [ref=e53]:
+      - img [ref=e55]
+      - generic [ref=e60]:
+        - text: This is a hosted version of Clerk's
+        - generic [ref=e61]: <SignIn />
+        - text: component. Sign in and you'll be redirected back to
+        - generic [ref=e62]: http://localhost:3000
+  - alert [ref=e63]
+```

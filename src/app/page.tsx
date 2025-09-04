@@ -15,6 +15,8 @@ import {
   Star,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default function LandingPage() {
   return (

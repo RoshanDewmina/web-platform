@@ -46,7 +46,7 @@ export default function SocialPage() {
     let mounted = true;
     const load = async () => {
       try {
-        const res = await fetch("/api/social/friends");
+        const res = await fetch("/api/social/friends", { cache: "no-store" });
         if (!res.ok) return;
         const data = await res.json();
         if (mounted) {
@@ -79,7 +79,9 @@ export default function SocialPage() {
     const loadFeed = async () => {
       setFeedLoading(true);
       try {
-        const res = await fetch("/api/social/activity?scope=friends&limit=50");
+        const res = await fetch("/api/social/activity?scope=friends&limit=50", {
+          cache: "no-store",
+        });
         if (res.ok) {
           const data = await res.json();
           if (mounted) setFeed(data.items || []);

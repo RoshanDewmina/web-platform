@@ -116,16 +116,24 @@ model Lesson {
   @@index([moduleId])
 }
 
-// Slide model
+// Slide model - Enhanced with grid layout
 model Slide {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   lessonId   String
   title      String
   notes      String?
   template   String?
   orderIndex Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+
+  // Grid layout data
+  gridLayout Json? // Contains elements with x,y,w,h positions
+  theme      Json? // Slide-specific theme overrides
+  transition String? @default("none")
+  duration   Int? // Auto-advance in seconds
+  background Json? // Background settings
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   lesson Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -519,4 +527,114 @@ enum GroupRole {
   ADMIN
   MODERATOR
   MEMBER
+}
+
+// ==================== Enhanced Asset Management ====================
+
+// Enhanced Asset model with better metadata
+model EnhancedAsset {
+  id           String  @id @default(cuid())
+  courseId     String?
+  filename     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  url          String
+  thumbnailUrl String?
+  sha256Hash   String  @unique
+
+  // Enhanced metadata
+  width      Int?
+  height     Int?
+  duration   Int? // For video/audio in seconds
+  transcript String? // For searchability
+  altText    String?
+
+  // Organization
+  tags     String[]
+  folderId String?
+
+  // Vector embeddings for semantic search
+  embedding Float[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+
+  // Relations
+  folder AssetFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@index([courseId])
+  @@index([sha256Hash])
+  @@index([folderId])
+}
+
+// Asset folders for organization
+model AssetFolder {
+  id          String   @id @default(cuid())
+  courseId    String?
+  name        String
+  parentId    String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  parent   AssetFolder?    @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children AssetFolder[]   @relation("FolderHierarchy")
+  assets   EnhancedAsset[]
+
+  @@index([courseId])
+  @@index([parentId])
+}
+
+// ==================== AI Command System ====================
+
+// AI Commands for audit and replay
+model AICommand {
+  id         String    @id @default(cuid())
+  courseId   String?
+  slideId    String?
+  type       String // Command type
+  parameters Json // Command parameters
+  status     String    @default("pending") // pending, executing, completed, failed
+  result     Json? // Command result
+  error      String? // Error message if failed
+  userId     String?
+  createdAt  DateTime  @default(now())
+  executedAt DateTime?
+
+  @@index([courseId])
+  @@index([slideId])
+  @@index([type])
+  @@index([status])
+}
+
+// Custom components created by users
+model CustomComponent {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  code         String   @db.Text
+  compiledCode String?  @db.Text
+  dependencies String[]
+  propSchema   Json
+  defaultProps Json
+  defaultSize  Json // {w, h}
+  minSize      Json // {w, h}
+  maxSize      Json? // {w, h}
+  category     String   @default("custom")
+  isPublic     Boolean  @default(false)
+  tags         String[] @default([])
+  version      Int      @default(1)
+  usageCount   Int      @default(0)
+  rating       Float    @default(0)
+  isVerified   Boolean  @default(false)
+  createdBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([createdBy])
+  @@index([isPublic])
+  @@index([category])
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import { ChatWidget } from "@/components/ai/chat-widget";
+import { ChatWidgetWrapper } from "@/components/ai/chat-widget-wrapper";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { Toaster } from "react-hot-toast";
@@ -48,7 +48,7 @@ export default function RootLayout({
             <QueryProvider>
               {children}
               {/* Persistent AI Chat */}
-              <ChatWidget />
+              <ChatWidgetWrapper />
               <Toaster
                 position="top-center"
                 toastOptions={{

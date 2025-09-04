@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { QdrantClient } from "@qdrant/js-client-rest";
 
 // Use cheapest default unless overridden
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     // Build lesson/course context using Qdrant if available, fallback to RAG-lite
-    const prisma = new PrismaClient();
+    // shared Prisma client
     let context = "";
     const qdrant = new QdrantClient({
       url: process.env.QDRANT_URL || "",

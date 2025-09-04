@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,7 +14,10 @@ export async function GET(req: NextRequest) {
     const course = await prisma.course.findUnique({
       where: { id: courseId },
       include: {
-        modules: { include: { lessons: { include: { quizzes: true } }, orderBy: { orderIndex: 'asc' } } },
+        modules: { 
+          include: { lessons: { include: { quizzes: true } } },
+          orderBy: { orderIndex: 'asc' }
+        },
       },
     });
     if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 });

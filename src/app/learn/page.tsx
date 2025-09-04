@@ -34,17 +34,40 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
-import { ChatWidget } from "@/components/ai/chat-widget";
+import dynamic from "next/dynamic";
+const ChatWidget = dynamic(
+  () => import("@/components/ai/chat-widget").then((m) => m.ChatWidget),
+  { ssr: false, loading: () => null }
+);
 import { RecommendationsGrid } from "./_components/recommendations-grid";
 import { Roadmap } from "./_components/roadmap";
 
 export default function LearnPage() {
+  // Client page: avoid pre-rendering personalized content
+  // Mark as dynamic to leverage client-side data fetching
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
 
   // Mock data - will be replaced with real data from API
   const courses = [
+    {
+      id: "renewable-energy-ontario",
+      title: "Community Renewable Energy Projects in Ontario",
+      description:
+        "Learn how communities can develop renewable energy projects within Ontario's regulatory framework.",
+      thumbnail: "/api/placeholder/300/200",
+      category: "Energy & Sustainability",
+      difficulty: "Intermediate",
+      duration: "12 hours",
+      students: 245,
+      rating: 4.9,
+      progress: 0,
+      enrolled: false,
+      instructor: "Indigenous Energy Leadership",
+      modules: 4,
+      completedModules: 0,
+    },
     {
       id: "1",
       title: "Introduction to React",
@@ -151,6 +174,7 @@ export default function LearnPage() {
 
   const categories = [
     "All Categories",
+    "Energy & Sustainability",
     "Web Development",
     "Programming",
     "Computer Science",
@@ -229,6 +253,9 @@ export default function LearnPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="Energy & Sustainability">
+                Energy & Sustainability
+              </SelectItem>
               <SelectItem value="Web Development">Web Development</SelectItem>
               <SelectItem value="Programming">Programming</SelectItem>
               <SelectItem value="Computer Science">Computer Science</SelectItem>

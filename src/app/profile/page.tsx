@@ -166,7 +166,7 @@ export default function ProfilePage() {
         accessibility: { tts: prefTts },
       };
       await user.update({
-        publicMetadata: { ...(user.publicMetadata || {}), aiProfile },
+        unsafeMetadata: { ...(user.unsafeMetadata || {}), aiProfile },
       });
       toast.success("Preferences saved");
     } catch (e) {
