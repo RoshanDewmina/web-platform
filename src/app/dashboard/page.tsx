@@ -95,8 +95,8 @@ export default function DashboardPage() {
 
       // Fetch user stats
       const [coursesResponse, progressResponse] = await Promise.all([
-        fetch('/api/courses'),
-        fetch('/api/progress'),
+        fetch("/api/courses"),
+        fetch("/api/progress"),
       ]);
 
       if (coursesResponse.ok && progressResponse.ok) {
@@ -104,40 +104,66 @@ export default function DashboardPage() {
         const progress = await progressResponse.json();
 
         // Calculate stats from real data
-        const enrolledCourses = courses.filter((c: any) => c.enrollments?.length > 0);
-        const completedLessons = progress.filter((p: any) => p.isCompleted).length;
+        const enrolledCourses = courses.filter(
+          (c: any) => c.enrollments?.length > 0
+        );
+        const completedLessons = progress.filter(
+          (p: any) => p.isCompleted
+        ).length;
 
         setStats({
           currentStreak: 0, // TODO: Implement streak tracking
-          totalXP: progress.reduce((acc: number, p: any) => acc + (p.xpEarned || 0), 0),
-          level: Math.floor(progress.reduce((acc: number, p: any) => acc + (p.xpEarned || 0), 0) / 100) + 1,
+          totalXP: progress.reduce(
+            (acc: number, p: any) => acc + (p.xpEarned || 0),
+            0
+          ),
+          level:
+            Math.floor(
+              progress.reduce(
+                (acc: number, p: any) => acc + (p.xpEarned || 0),
+                0
+              ) / 100
+            ) + 1,
           coursesInProgress: enrolledCourses.length,
           completedLessons,
-          studyMinutesToday: progress.reduce((acc: number, p: any) => acc + (p.timeSpent || 0), 0) / 60,
+          studyMinutesToday:
+            progress.reduce(
+              (acc: number, p: any) => acc + (p.timeSpent || 0),
+              0
+            ) / 60,
         });
 
         // Get recent courses with progress
-        const recentCoursesData = enrolledCourses.slice(0, 3).map((course: any) => {
-          const courseProgress = progress.filter((p: any) => 
-            course.modules?.some((m: any) => 
-              m.lessons?.some((l: any) => l.id === p.lessonId)
-            )
-          );
-          
-          const totalLessons = course.modules?.reduce(
-            (acc: number, m: any) => acc + (m.lessons?.length || 0), 0
-          ) || 0;
-          
-          const completedLessons = courseProgress.filter((p: any) => p.isCompleted).length;
+        const recentCoursesData = enrolledCourses
+          .slice(0, 3)
+          .map((course: any) => {
+            const courseProgress = progress.filter((p: any) =>
+              course.modules?.some((m: any) =>
+                m.lessons?.some((l: any) => l.id === p.lessonId)
+              )
+            );
 
-          return {
-            id: course.id,
-            title: course.title,
-            progress: totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0,
-            nextLesson: "Continue learning",
-            thumbnail: course.thumbnail || "/api/placeholder/100/100",
-          };
-        });
+            const totalLessons =
+              course.modules?.reduce(
+                (acc: number, m: any) => acc + (m.lessons?.length || 0),
+                0
+              ) || 0;
+
+            const completedLessons = courseProgress.filter(
+              (p: any) => p.isCompleted
+            ).length;
+
+            return {
+              id: course.id,
+              title: course.title,
+              progress:
+                totalLessons > 0
+                  ? Math.round((completedLessons / totalLessons) * 100)
+                  : 0,
+              nextLesson: "Continue learning",
+              thumbnail: course.thumbnail || "/api/placeholder/100/100",
+            };
+          });
 
         setRecentCourses(recentCoursesData);
       }
@@ -145,9 +171,8 @@ export default function DashboardPage() {
       // TODO: Fetch real activities and leaderboard data
       setUpcomingActivities([]);
       setLeaderboard([]);
-
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }

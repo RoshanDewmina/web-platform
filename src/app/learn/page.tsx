@@ -74,10 +74,10 @@ export default function LearnPage() {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/courses');
-        if (!response.ok) throw new Error('Failed to fetch courses');
+        const response = await fetch("/api/courses");
+        if (!response.ok) throw new Error("Failed to fetch courses");
         const data = await response.json();
-        
+
         // Transform API data to match component expectations
         const transformedCourses = data.map((course: any) => ({
           id: course.id,
@@ -95,11 +95,11 @@ export default function LearnPage() {
           modules: course.modules?.length || 0,
           completedModules: 0, // Will be calculated from progress
         }));
-        
+
         setCoursesData(transformedCourses);
       } catch (err) {
-        console.error('Error fetching courses:', err);
-        setError('Failed to load courses');
+        console.error("Error fetching courses:", err);
+        setError("Failed to load courses");
       } finally {
         setLoading(false);
       }
@@ -112,11 +112,11 @@ export default function LearnPage() {
   const handleEnroll = async (courseId: string) => {
     try {
       const response = await fetch(`/api/courses/${courseId}/enroll`, {
-        method: 'POST',
+        method: "POST",
       });
-      
-      if (!response.ok) throw new Error('Failed to enroll');
-      
+
+      if (!response.ok) throw new Error("Failed to enroll");
+
       // Update local state
       setCoursesData((prev) =>
         prev.map((course) =>
@@ -125,12 +125,12 @@ export default function LearnPage() {
             : course
         )
       );
-      
+
       // Navigate to course
       router.push(`/learn/course/${courseId}`);
     } catch (err) {
-      console.error('Error enrolling in course:', err);
-      alert('Failed to enroll in course');
+      console.error("Error enrolling in course:", err);
+      alert("Failed to enroll in course");
     }
   };
 
@@ -139,7 +139,9 @@ export default function LearnPage() {
   // Extract unique categories from courses
   const categories = [
     "All Categories",
-    ...Array.from(new Set(courses.map(course => course.category))).filter(Boolean)
+    ...Array.from(new Set(courses.map((course) => course.category))).filter(
+      Boolean
+    ),
   ];
 
   // Learning paths can be fetched from API in the future
@@ -298,7 +300,10 @@ export default function LearnPage() {
                         </Button>
                       </Link>
                     ) : (
-                      <Link href={`/learn/course/${course.id}`} className="w-full">
+                      <Link
+                        href={`/learn/course/${course.id}`}
+                        className="w-full"
+                      >
                         <Button
                           className="w-full"
                           variant="outline"

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,7 +60,18 @@ import {
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { format, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, isToday } from "date-fns";
+import {
+  format,
+  addDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  isSameMonth,
+  isToday,
+} from "date-fns";
 
 interface Event {
   id: string;
@@ -316,7 +328,10 @@ export default function CalendarPage() {
                       id="description"
                       value={newEvent.description}
                       onChange={(e) =>
-                        setNewEvent({ ...newEvent, description: e.target.value })
+                        setNewEvent({
+                          ...newEvent,
+                          description: e.target.value,
+                        })
                       }
                       placeholder="Event details..."
                     />
@@ -340,7 +355,10 @@ export default function CalendarPage() {
                         type="time"
                         value={newEvent.startTime}
                         onChange={(e) =>
-                          setNewEvent({ ...newEvent, startTime: e.target.value })
+                          setNewEvent({
+                            ...newEvent,
+                            startTime: e.target.value,
+                          })
                         }
                       />
                     </div>
@@ -364,7 +382,10 @@ export default function CalendarPage() {
                           id="location"
                           value={newEvent.location}
                           onChange={(e) =>
-                            setNewEvent({ ...newEvent, location: e.target.value })
+                            setNewEvent({
+                              ...newEvent,
+                              location: e.target.value,
+                            })
                           }
                           placeholder="Room or address"
                         />
@@ -388,7 +409,10 @@ export default function CalendarPage() {
                       id="recurring"
                       checked={newEvent.recurring}
                       onChange={(e) =>
-                        setNewEvent({ ...newEvent, recurring: e.target.checked })
+                        setNewEvent({
+                          ...newEvent,
+                          recurring: e.target.checked,
+                        })
                       }
                       className="rounded"
                     />
@@ -404,7 +428,10 @@ export default function CalendarPage() {
                   >
                     Cancel
                   </Button>
-                  <Button onClick={handleCreateEvent} disabled={!newEvent.title}>
+                  <Button
+                    onClick={handleCreateEvent}
+                    disabled={!newEvent.title}
+                  >
                     Create Event
                   </Button>
                 </DialogFooter>
@@ -492,7 +519,8 @@ export default function CalendarPage() {
                             "bg-background p-2 min-h-[100px] cursor-pointer hover:bg-accent transition-colors",
                             !isSameMonth(day, currentMonth) && "opacity-50",
                             isToday(day) && "bg-accent/50",
-                            isSameDay(day, selectedDate) && "ring-2 ring-primary"
+                            isSameDay(day, selectedDate) &&
+                              "ring-2 ring-primary"
                           )}
                           onClick={() => setSelectedDate(day)}
                         >
@@ -523,7 +551,9 @@ export default function CalendarPage() {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <div className="space-y-1">
-                                      <p className="font-medium">{event.title}</p>
+                                      <p className="font-medium">
+                                        {event.title}
+                                      </p>
                                       <p className="text-xs">
                                         {event.startTime}
                                         {event.endTime && ` - ${event.endTime}`}
@@ -557,7 +587,8 @@ export default function CalendarPage() {
                           className={cn(
                             "text-center p-2 rounded-lg",
                             isToday(day) && "bg-accent",
-                            isSameDay(day, selectedDate) && "ring-2 ring-primary"
+                            isSameDay(day, selectedDate) &&
+                              "ring-2 ring-primary"
                           )}
                         >
                           <div className="text-sm font-medium">
@@ -656,7 +687,8 @@ export default function CalendarPage() {
                                           <div className="flex items-center gap-1">
                                             <Clock className="h-3 w-3" />
                                             {event.startTime}
-                                            {event.endTime && ` - ${event.endTime}`}
+                                            {event.endTime &&
+                                              ` - ${event.endTime}`}
                                           </div>
                                           {event.location && (
                                             <div className="flex items-center gap-1">
@@ -696,10 +728,7 @@ export default function CalendarPage() {
                                     </div>
                                   </div>
                                   {event.recurring && (
-                                    <Badge
-                                      variant="outline"
-                                      className="mt-2"
-                                    >
+                                    <Badge variant="outline" className="mt-2">
                                       <Repeat className="h-3 w-3 mr-1" />
                                       Recurring
                                     </Badge>
@@ -770,7 +799,8 @@ export default function CalendarPage() {
                                 {event.title}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {format(event.date, "MMM d")} at {event.startTime}
+                                {format(event.date, "MMM d")} at{" "}
+                                {event.startTime}
                               </p>
                             </div>
                           </div>
@@ -828,7 +858,10 @@ export default function CalendarPage() {
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     {React.createElement(eventTypeIcons[selectedEvent.type], {
-                      className: cn("h-5 w-5 text-white p-1 rounded", selectedEvent.color),
+                      className: cn(
+                        "h-5 w-5 text-white p-1 rounded",
+                        selectedEvent.color
+                      ),
                     })}
                     {selectedEvent.title}
                   </DialogTitle>

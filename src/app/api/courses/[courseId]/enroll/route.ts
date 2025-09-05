@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 // POST /api/courses/[courseId]/enroll - Enroll in a course
 export async function POST(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  props: { params: Promise<{ courseId: string }> }
 ) {
   try {
     // For development, bypass authentication
@@ -21,7 +21,7 @@ export async function POST(
       console.log('Running in development mode without Clerk');
     }
 
-    const { courseId } = params;
+    const { courseId } = await props.params;
 
     // Check if course exists and is published
     const course = await prisma.course.findFirst({
@@ -109,7 +109,7 @@ export async function POST(
 // DELETE /api/courses/[courseId]/enroll - Unenroll from a course
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  props: { params: Promise<{ courseId: string }> }
 ) {
   try {
     // For development, bypass authentication
@@ -125,7 +125,7 @@ export async function DELETE(
       console.log('Running in development mode without Clerk');
     }
 
-    const { courseId } = params;
+    const { courseId } = await props.params;
 
     // Delete enrollment
     const enrollment = await prisma.enrollment.deleteMany({
