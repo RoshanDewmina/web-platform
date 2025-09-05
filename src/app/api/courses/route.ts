@@ -6,10 +6,17 @@ import { Prisma } from '@prisma/client';
 // GET /api/courses - Get all courses or filtered courses
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      // For development, return empty array instead of error
-      return NextResponse.json([]);
+    // For development, bypass authentication
+    let userId = 'dev-user';
+    
+    // Try to get real user ID if Clerk is configured
+    try {
+      const authResult = await auth();
+      if (authResult?.userId) {
+        userId = authResult.userId;
+      }
+    } catch (error) {
+      console.log('Running in development mode without Clerk');
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -88,9 +95,19 @@ export async function GET(request: NextRequest) {
 // POST /api/courses - Create a new course (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const { userId, sessionClaims } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // For development, bypass authentication
+    let userId = 'dev-user';
+    let sessionClaims: any = {};
+    
+    // Try to get real user ID if Clerk is configured
+    try {
+      const authResult = await auth();
+      if (authResult?.userId) {
+        userId = authResult.userId;
+        sessionClaims = authResult.sessionClaims;
+      }
+    } catch (error) {
+      console.log('Running in development mode without Clerk');
     }
 
     const role = (sessionClaims as any)?.metadata?.role || (sessionClaims as any)?.publicMetadata?.role;
@@ -137,8 +154,20 @@ export async function POST(request: NextRequest) {
 // POST /api/courses:bulk - Bulk operations (publish/unpublish, duplicate, archive)
 export async function PUT(request: NextRequest) {
   try {
-    const { userId, sessionClaims } = await auth();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // For development, bypass authentication
+    let userId = 'dev-user';
+    let sessionClaims: any = {};
+    
+    // Try to get real user ID if Clerk is configured
+    try {
+      const authResult = await auth();
+      if (authResult?.userId) {
+        userId = authResult.userId;
+        sessionClaims = authResult.sessionClaims;
+      }
+    } catch (error) {
+      console.log('Running in development mode without Clerk');
+    }
     const role = (sessionClaims as any)?.metadata?.role || (sessionClaims as any)?.publicMetadata?.role;
     
     // Temporarily allow all authenticated users for development

@@ -24,7 +24,7 @@ export function useProgressTracking({
     const startTracking = async () => {
       isTrackingRef.current = true;
       const sessionId = await progressTracker.startSession(courseId, totalSlides);
-      sessionRef.current = sessionId;
+      sessionRef.current = sessionId || null;
     };
 
     startTracking();

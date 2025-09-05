@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ResizablePanel } from "@/components/ui/resizable-panel";
 import { cn } from "@/lib/utils";
 import {
   ChevronRight,
@@ -29,6 +28,18 @@ import {
 import { SlideRenderer } from "./slide-renderer";
 import { useProgressTracking } from "@/hooks/use-progress-tracking";
 import { ProgressDisplay } from "@/components/course/progress-display";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 interface CourseContentProps {
   course: Course;
@@ -46,7 +57,8 @@ export function CourseContent({ course }: CourseContentProps) {
   const [expandedSubModules, setExpandedSubModules] = useState<
     Record<string, boolean>
   >({});
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // Calculate total slides
   const totalSlides = course.modules.reduce(
@@ -60,15 +72,11 @@ export function CourseContent({ course }: CourseContentProps) {
   );
 
   // Initialize progress tracking
-  const {
-    trackSlideView,
-    trackInteraction,
-    markSlideCompleted,
-    getProgress,
-  } = useProgressTracking({
-    courseId: course.id,
-    totalSlides,
-  });
+  const { trackSlideView, trackInteraction, markSlideCompleted, getProgress } =
+    useProgressTracking({
+      courseId: course.id,
+      totalSlides,
+    });
 
   // Initialize with first slide
   useState(() => {
@@ -80,7 +88,7 @@ export function CourseContent({ course }: CourseContentProps) {
       const firstModule = course.modules[0];
       const firstSubModule = firstModule.subModules[0];
       const firstSlide = firstSubModule.slides[0];
-      
+
       setSelectedSlide({
         module: firstModule,
         subModule: firstSubModule,
@@ -138,6 +146,11 @@ export function CourseContent({ course }: CourseContentProps) {
     if (!expandedSubModules[subModule.id]) {
       setExpandedSubModules((prev) => ({ ...prev, [subModule.id]: true }));
     }
+
+    // Close mobile sidebar after selection
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const getSlideIcon = (type?: string) => {
@@ -176,7 +189,7 @@ export function CourseContent({ course }: CourseContentProps) {
 
     if (direction === "prev" && currentIndex > 0) {
       const prev = allSlides[currentIndex - 1];
-      
+
       // Track navigation
       trackInteraction("navigation", "slide_navigate", {
         from: selectedSlide.slide.id,
@@ -184,16 +197,16 @@ export function CourseContent({ course }: CourseContentProps) {
         direction: "previous",
         method: "button",
       });
-      
+
       selectSlide(prev.module, prev.subModule, prev.slide);
     } else if (direction === "next" && currentIndex < allSlides.length - 1) {
       const next = allSlides[currentIndex + 1];
-      
+
       // Mark current slide as completed when navigating forward
       if (direction === "next") {
         markSlideCompleted(selectedSlide.slide.id);
       }
-      
+
       // Track navigation
       trackInteraction("navigation", "slide_navigate", {
         from: selectedSlide.slide.id,
@@ -201,7 +214,7 @@ export function CourseContent({ course }: CourseContentProps) {
         direction: "next",
         method: "button",
       });
-      
+
       selectSlide(next.module, next.subModule, next.slide);
     }
   };
@@ -209,21 +222,29 @@ export function CourseContent({ course }: CourseContentProps) {
   // Sidebar content component
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
+      <div className="p-4 border-b">
+        <h2 className="text-lg font-semibold">Table of Contents</h2>
+      </div>
+
       {/* Progress Display */}
       <div className="p-4 border-b">
         <ProgressDisplay courseId={course.id} className="shadow-sm" />
         <Link href={`/learn/course/${course.id}/analytics`}>
-          <Button variant="outline" size="sm" className="w-full mt-3 flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full mt-3 flex items-center gap-2"
+          >
             <BarChart className="h-4 w-4" />
             View Detailed Analytics
           </Button>
         </Link>
       </div>
-      
+
       {/* Course Modules */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-2">
-          {course.modules.map((module, moduleIndex) => (
+          {course.modules.map((module) => (
             <div key={module.id} className="space-y-1">
               <button
                 onClick={() => toggleModule(module.id)}
@@ -234,139 +255,79 @@ export function CourseContent({ course }: CourseContentProps) {
                 ) : (
                   <ChevronRight className="h-4 w-4 shrink-0" />
                 )}
-                <span className="text-sm font-medium">
-                  {module.title}
-                </span>
+                <span className="text-sm font-medium">{module.title}</span>
               </button>
 
-          {expandedModules[module.id] && (
-            <div className="ml-4 space-y-1">
-              {module.subModules.map((subModule, subModuleIndex) => (
-                <div key={subModule.id} className="space-y-1">
-                  <button
-                    onClick={() => toggleSubModule(subModule.id)}
-                    className="flex items-center gap-2 w-full p-2 text-left hover:bg-accent rounded-lg transition-colors"
-                  >
-                    {expandedSubModules[subModule.id] ? (
-                      <ChevronDown className="h-3 w-3 shrink-0" />
-                    ) : (
-                      <ChevronRight className="h-3 w-3 shrink-0" />
-                    )}
-                    <span className="text-sm text-muted-foreground">
-                      {subModule.title}
-                    </span>
-                  </button>
+              {expandedModules[module.id] && (
+                <div className="ml-4 space-y-1">
+                  {module.subModules.map((subModule) => (
+                    <div key={subModule.id} className="space-y-1">
+                      <button
+                        onClick={() => toggleSubModule(subModule.id)}
+                        className="flex items-center gap-2 w-full p-2 text-left hover:bg-accent rounded-lg transition-colors"
+                      >
+                        {expandedSubModules[subModule.id] ? (
+                          <ChevronDown className="h-3 w-3 shrink-0" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3 shrink-0" />
+                        )}
+                        <span className="text-sm text-muted-foreground">
+                          {subModule.title}
+                        </span>
+                      </button>
 
-                  {expandedSubModules[subModule.id] && (
-                    <div className="ml-4 space-y-0.5">
-                      {subModule.slides.map((slide, slideIndex) => (
-                        <button
-                          key={slide.id}
-                          onClick={() =>
-                            selectSlide(module, subModule, slide)
-                          }
-                          className={cn(
-                            "flex items-center gap-2 w-full p-2 text-left rounded-lg transition-colors text-sm",
-                            selectedSlide?.slide.id === slide.id
-                              ? "bg-primary text-primary-foreground"
-                              : "hover:bg-accent"
-                          )}
-                        >
-                          {getSlideIcon(slide.type)}
-                          <span className="truncate">
-                            {slide.title}
-                          </span>
-                        </button>
-                      ))}
+                      {expandedSubModules[subModule.id] && (
+                        <div className="ml-4 space-y-0.5">
+                          {subModule.slides.map((slide) => (
+                            <button
+                              key={slide.id}
+                              onClick={() =>
+                                selectSlide(module, subModule, slide)
+                              }
+                              className={cn(
+                                "flex items-center gap-2 w-full p-2 text-left rounded-lg transition-colors text-sm",
+                                selectedSlide?.slide.id === slide.id
+                                  ? "bg-primary text-primary-foreground"
+                                  : "hover:bg-accent"
+                              )}
+                            >
+                              {getSlideIcon(slide.type)}
+                              <span className="truncate">{slide.title}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
-      ))}
+          ))}
         </div>
       </ScrollArea>
     </div>
   );
 
-  return (
-    <div className="flex h-screen relative bg-background overflow-hidden">
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-      
-      {/* Table of Contents Sidebar - Fixed on mobile, resizable on desktop */}
-      <div className="lg:hidden">
-        <div
-          className={cn(
-            "fixed z-50 h-full transition-all duration-300 ease-in-out border-r bg-background",
-            isSidebarOpen ? "w-80 left-0" : "w-0 -left-80"
-          )}
-        >
-          {isSidebarOpen && (
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Table of Contents</h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsSidebarOpen(false)}
-                    className="h-8 w-8"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <SidebarContent />
-            </div>
-          )}
-        </div>
-      </div>
+  // Mobile sidebar
+  if (isMobile) {
+    return (
+      <div className="flex h-screen relative bg-background overflow-hidden">
+        {/* Mobile Sheet */}
+        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+          <SheetContent side="left" className="p-0 w-80">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Course Navigation</SheetTitle>
+            </SheetHeader>
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
 
-      {/* Desktop Resizable Sidebar */}
-      <ResizablePanel
-        isOpen={isSidebarOpen}
-        defaultWidth={320}
-        minWidth={240}
-        maxWidth={480}
-        className="hidden lg:block border-r bg-background"
-      >
-        <div className="h-full flex flex-col">
-          <div className="p-4 border-b">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Course Header */}
+          <div className="border-b px-6 py-4 bg-background">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Table of Contents</h2>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsSidebarOpen(false)}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <SidebarContent />
-        </div>
-      </ResizablePanel>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Course Header */}
-        <div className="border-b px-6 py-4 bg-background">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {!isSidebarOpen && (
+              <div className="flex items-center gap-4">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -375,47 +336,136 @@ export function CourseContent({ course }: CourseContentProps) {
                 >
                   <Menu className="h-4 w-4" />
                 </Button>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold">{course.title}</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {course.subtitle}
-                </p>
+                <div>
+                  <h1 className="text-2xl font-bold">{course.title}</h1>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {course.subtitle}
+                  </p>
+                </div>
               </div>
+              <Link href="/learn">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden sm:flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Courses
+                </Button>
+                <Button variant="ghost" size="icon" className="sm:hidden">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
-            <Link href="/learn">
-              <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Courses
-              </Button>
-              <Button variant="ghost" size="icon" className="sm:hidden">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
+          </div>
+
+          {/* Slide Content */}
+          <div className="flex-1 overflow-auto">
+            {selectedSlide ? (
+              <SlideRenderer
+                slide={selectedSlide.slide}
+                module={selectedSlide.module}
+                subModule={selectedSlide.subModule}
+                onNavigate={navigateSlide}
+                onInteraction={trackInteraction}
+                onSlideComplete={() =>
+                  markSlideCompleted(selectedSlide.slide.id)
+                }
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
+                    Select a slide to begin
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Slide Content */}
-        <div className="flex-1 overflow-auto">
-          {selectedSlide ? (
-            <SlideRenderer
-              slide={selectedSlide.slide}
-              module={selectedSlide.module}
-              subModule={selectedSlide.subModule}
-              onNavigate={navigateSlide}
-              onInteraction={trackInteraction}
-              onSlideComplete={() => markSlideCompleted(selectedSlide.slide.id)}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Select a slide to begin</p>
+  // Desktop resizable layout
+  const savedSize =
+    typeof window !== "undefined"
+      ? localStorage.getItem("course-sidebar-size")
+      : null;
+  const defaultSidebarSize = savedSize ? JSON.parse(savedSize) : 25;
+
+  return (
+    <div className="h-screen bg-background">
+      <ResizablePanelGroup
+        direction="horizontal"
+        className="h-full"
+        onLayout={(sizes: number[]) => {
+          localStorage.setItem("course-sidebar-size", JSON.stringify(sizes[0]));
+        }}
+      >
+        <ResizablePanel
+          defaultSize={defaultSidebarSize}
+          minSize={15}
+          maxSize={40}
+          className="bg-background"
+        >
+          <SidebarContent />
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        <ResizablePanel defaultSize={75} minSize={60}>
+          <div className="flex flex-col h-full">
+            {/* Course Header */}
+            <div className="border-b px-6 py-4 bg-background">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold">{course.title}</h1>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {course.subtitle}
+                  </p>
+                </div>
+                <Link href="/learn">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Courses
+                  </Button>
+                </Link>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+
+            {/* Slide Content */}
+            <div className="flex-1 overflow-auto">
+              {selectedSlide ? (
+                <SlideRenderer
+                  slide={selectedSlide.slide}
+                  module={selectedSlide.module}
+                  subModule={selectedSlide.subModule}
+                  onNavigate={navigateSlide}
+                  onInteraction={trackInteraction}
+                  onSlideComplete={() =>
+                    markSlideCompleted(selectedSlide.slide.id)
+                  }
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">
+                      Select a slide to begin
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }

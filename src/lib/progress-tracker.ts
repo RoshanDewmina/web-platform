@@ -140,12 +140,7 @@ class ProgressTracker {
     }
 
     // Track the new slide view
-    this.debouncedSlideUpdate({
-      slideId,
-      moduleId,
-      subModuleId,
-      initialView: true,
-    });
+    this.debouncedSlideUpdate();
   }
 
   // Track user interactions

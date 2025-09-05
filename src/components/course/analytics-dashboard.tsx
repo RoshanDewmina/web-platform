@@ -55,15 +55,16 @@ export function AnalyticsDashboard({ courseId }: AnalyticsDashboardProps) {
     );
   }
 
-  const { insights, slideStatistics, interactionStats, recentSessions } = analytics;
+  const { insights, slideStatistics, interactionStats, recentSessions } =
+    analytics;
 
   // Prepare chart data
-  const hourlyData = Object.entries(insights.engagementPatterns.byHour || {}).map(
-    ([hour, count]) => ({
-      hour: `${hour}:00`,
-      sessions: count,
-    })
-  );
+  const hourlyData = Object.entries(
+    insights.engagementPatterns.byHour || {}
+  ).map(([hour, count]) => ({
+    hour: `${hour}:00`,
+    sessions: count,
+  }));
 
   const dayData = Object.entries(insights.engagementPatterns.byDay || {}).map(
     ([day, count]) => ({
@@ -72,10 +73,11 @@ export function AnalyticsDashboard({ courseId }: AnalyticsDashboardProps) {
     })
   );
 
-  const interactionData = insights.topInteractions?.slice(0, 5).map((item: any) => ({
-    name: item.eventName,
-    count: item._count,
-  })) || [];
+  const interactionData =
+    insights.topInteractions?.slice(0, 5).map((item: any) => ({
+      name: item.eventName,
+      count: item._count,
+    })) || [];
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
@@ -85,7 +87,9 @@ export function AnalyticsDashboard({ courseId }: AnalyticsDashboardProps) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Sessions
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -98,31 +102,41 @@ export function AnalyticsDashboard({ courseId }: AnalyticsDashboardProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Session Time</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg Session Time
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{insights.avgSessionDuration}m</div>
+            <div className="text-2xl font-bold">
+              {insights.avgSessionDuration}m
+            </div>
             <p className="text-xs text-muted-foreground">Per session</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Interactions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Interactions
+            </CardTitle>
             <MousePointer className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {analytics.analytics?.totalInteractions || 0}
             </div>
-            <p className="text-xs text-muted-foreground">User actions tracked</p>
+            <p className="text-xs text-muted-foreground">
+              User actions tracked
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Completion Rate
+            </CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -199,7 +213,10 @@ export function AnalyticsDashboard({ courseId }: AnalyticsDashboardProps) {
               <CardContent>
                 <div className="space-y-3">
                   {insights.mostViewedSlides?.map((slide: any, idx: number) => (
-                    <div key={slide.slideId} className="flex items-center justify-between">
+                    <div
+                      key={slide.slideId}
+                      className="flex items-center justify-between"
+                    >
                       <span className="text-sm truncate flex-1">
                         {slide.slideId}
                       </span>
@@ -255,14 +272,24 @@ export function AnalyticsDashboard({ courseId }: AnalyticsDashboardProps) {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`
+                    }
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
                   >
-                    {interactionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                    {interactionData.map(
+                      (
+                        entry: { name: string; count: number },
+                        index: number
+                      ) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      )
+                    )}
                   </Pie>
                   <Tooltip />
                 </PieChart>
@@ -289,7 +316,8 @@ export function AnalyticsDashboard({ courseId }: AnalyticsDashboardProps) {
                         {new Date(session.startedAt).toLocaleTimeString()}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {session.completedSlides} slides completed • {Math.round(session.totalDuration / 60)}m
+                        {session.completedSlides} slides completed •{" "}
+                        {Math.round(session.totalDuration / 60)}m
                       </p>
                     </div>
                     <Badge variant={session.endedAt ? "default" : "secondary"}>

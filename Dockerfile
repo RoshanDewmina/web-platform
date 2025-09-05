@@ -3,9 +3,9 @@ FROM node:20-bookworm-slim AS builder
 ENV LIGHTNINGCSS_FORCE_WASM=1
 WORKDIR /app
 COPY package.json package-lock.json* bun.lock* ./
+COPY prisma ./prisma
 RUN npm install --legacy-peer-deps
 COPY . .
-RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED=1 \
     LIGHTNINGCSS_FORCE_SYSTEM=1 \
     LIGHTNINGCSS_FORCE_WASM=1

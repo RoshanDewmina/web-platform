@@ -21,6 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Search,
   Clock,
@@ -31,8 +39,14 @@ import {
   TrendingUp,
   Award,
   PlayCircle,
+  UserPlus,
+  MessageSquare,
+  Calendar,
+  MapPin,
+  Video,
+  Globe,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -42,6 +56,7 @@ const ChatWidget = dynamic(
 );
 import { RecommendationsGrid } from "./_components/recommendations-grid";
 import { Roadmap } from "./_components/roadmap";
+import { StudyGroups } from "./_components/study-groups";
 
 export default function LearnPage() {
   // Client page: avoid pre-rendering personalized content
@@ -51,189 +66,84 @@ export default function LearnPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [coursesData, setCoursesData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - will be replaced with real data from API
-  const initialCourses = [
-    {
-      id: "renewable-energy-ontario",
-      title: "Community Renewable Energy Projects in Ontario",
-      description:
-        "Learn how communities can develop renewable energy projects within Ontario's regulatory framework.",
-      thumbnail: "/api/placeholder/300/200",
-      category: "Energy & Sustainability",
-      difficulty: "Intermediate",
-      duration: "12 hours",
-      students: 245,
-      rating: 4.9,
-      progress: 0,
-      enrolled: false,
-      instructor: "Indigenous Energy Leadership",
-      modules: 4,
-      completedModules: 0,
-    },
-    {
-      id: "1",
-      title: "Introduction to React",
-      description:
-        "Learn the fundamentals of React including components, state, and props.",
-      thumbnail: "/api/placeholder/300/200",
-      category: "Web Development",
-      difficulty: "Beginner",
-      duration: "4 hours",
-      students: 1234,
-      rating: 4.8,
-      progress: 75,
-      enrolled: true,
-      instructor: "John Doe",
-      modules: 8,
-      completedModules: 6,
-    },
-    {
-      id: "2",
-      title: "Advanced TypeScript",
-      description:
-        "Master TypeScript with advanced patterns and best practices.",
-      thumbnail: "/api/placeholder/300/200",
-      category: "Programming",
-      difficulty: "Advanced",
-      duration: "6 hours",
-      students: 892,
-      rating: 4.9,
-      progress: 40,
-      enrolled: true,
-      instructor: "Jane Smith",
-      modules: 10,
-      completedModules: 4,
-    },
-    {
-      id: "3",
-      title: "Data Structures & Algorithms",
-      description:
-        "Essential computer science concepts for technical interviews.",
-      thumbnail: "/api/placeholder/300/200",
-      category: "Computer Science",
-      difficulty: "Intermediate",
-      duration: "12 hours",
-      students: 3456,
-      rating: 4.7,
-      progress: 60,
-      enrolled: true,
-      instructor: "Prof. Johnson",
-      modules: 15,
-      completedModules: 9,
-    },
-    {
-      id: "4",
-      title: "Python for Data Science",
-      description:
-        "Learn Python programming with a focus on data analysis and visualization.",
-      thumbnail: "/api/placeholder/300/200",
-      category: "Data Science",
-      difficulty: "Beginner",
-      duration: "8 hours",
-      students: 5678,
-      rating: 4.6,
-      progress: 0,
-      enrolled: false,
-      instructor: "Dr. Williams",
-      modules: 12,
-      completedModules: 0,
-    },
-    {
-      id: "5",
-      title: "Machine Learning Fundamentals",
-      description:
-        "Introduction to ML concepts, algorithms, and practical applications.",
-      thumbnail: "/api/placeholder/300/200",
-      category: "AI & ML",
-      difficulty: "Intermediate",
-      duration: "10 hours",
-      students: 2345,
-      rating: 4.8,
-      progress: 0,
-      enrolled: false,
-      instructor: "Dr. Chen",
-      modules: 14,
-      completedModules: 0,
-    },
-    {
-      id: "6",
-      title: "UI/UX Design Principles",
-      description:
-        "Master the art of creating beautiful and functional user interfaces.",
-      thumbnail: "/api/placeholder/300/200",
-      category: "Design",
-      difficulty: "Beginner",
-      duration: "5 hours",
-      students: 1890,
-      rating: 4.5,
-      progress: 0,
-      enrolled: false,
-      instructor: "Sarah Miller",
-      modules: 7,
-      completedModules: 0,
-    },
-  ];
+  // Fetch courses from API
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/courses');
+        if (!response.ok) throw new Error('Failed to fetch courses');
+        const data = await response.json();
+        
+        // Transform API data to match component expectations
+        const transformedCourses = data.map((course: any) => ({
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          thumbnail: course.thumbnail || "/api/placeholder/300/200",
+          category: course.category,
+          difficulty: course.difficulty,
+          duration: `${course.estimatedHours} hours`,
+          students: course._count?.enrollments || 0,
+          rating: 0, // TODO: Add rating system
+          progress: 0, // Will be calculated from user's progress
+          enrolled: course.enrollments?.length > 0,
+          instructor: "Instructor", // TODO: Add instructor field
+          modules: course.modules?.length || 0,
+          completedModules: 0, // Will be calculated from progress
+        }));
+        
+        setCoursesData(transformedCourses);
+      } catch (err) {
+        console.error('Error fetching courses:', err);
+        setError('Failed to load courses');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Initialize courses state
-  useState(() => {
-    setCoursesData(initialCourses);
-  });
+    fetchCourses();
+  }, []);
 
   // Handle course enrollment
-  const handleEnroll = (courseId: string) => {
-    setCoursesData((prev) =>
-      prev.map((course) =>
-        course.id === courseId
-          ? { ...course, enrolled: true, progress: 0 }
-          : course
-      )
-    );
+  const handleEnroll = async (courseId: string) => {
+    try {
+      const response = await fetch(`/api/courses/${courseId}/enroll`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) throw new Error('Failed to enroll');
+      
+      // Update local state
+      setCoursesData((prev) =>
+        prev.map((course) =>
+          course.id === courseId
+            ? { ...course, enrolled: true, progress: 0 }
+            : course
+        )
+      );
+      
+      // Navigate to course
+      router.push(`/learn/course/${courseId}`);
+    } catch (err) {
+      console.error('Error enrolling in course:', err);
+      alert('Failed to enroll in course');
+    }
   };
 
   const courses = coursesData;
 
+  // Extract unique categories from courses
   const categories = [
     "All Categories",
-    "Energy & Sustainability",
-    "Web Development",
-    "Programming",
-    "Computer Science",
-    "Data Science",
-    "AI & ML",
-    "Design",
+    ...Array.from(new Set(courses.map(course => course.category))).filter(Boolean)
   ];
 
-  const learningPaths = [
-    {
-      id: "1",
-      title: "Full Stack Web Developer",
-      description:
-        "Become a full-stack developer with React, Node.js, and databases.",
-      courses: 8,
-      duration: "6 months",
-      level: "Beginner to Advanced",
-      color: "bg-blue-500",
-    },
-    {
-      id: "2",
-      title: "Data Scientist",
-      description: "Master data analysis, machine learning, and visualization.",
-      courses: 10,
-      duration: "8 months",
-      level: "Intermediate",
-      color: "bg-green-500",
-    },
-    {
-      id: "3",
-      title: "Mobile App Developer",
-      description: "Build native and cross-platform mobile applications.",
-      courses: 6,
-      duration: "4 months",
-      level: "Intermediate",
-      color: "bg-purple-500",
-    },
-  ];
+  // Learning paths can be fetched from API in the future
+  const learningPaths: any[] = [];
 
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
@@ -303,11 +213,12 @@ export default function LearnPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="courses" className="space-y-4">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="courses">All Courses</TabsTrigger>
             <TabsTrigger value="enrolled">My Courses</TabsTrigger>
             <TabsTrigger value="paths">Learning Paths</TabsTrigger>
             <TabsTrigger value="recommended">Recommended</TabsTrigger>
+            <TabsTrigger value="study-groups">Study Groups</TabsTrigger>
           </TabsList>
 
           {/* All Courses Tab */}
@@ -527,6 +438,11 @@ export default function LearnPage() {
                 <RecommendationsGrid />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Study Groups Tab */}
+          <TabsContent value="study-groups" className="space-y-4">
+            <StudyGroups />
           </TabsContent>
         </Tabs>
       </div>
