@@ -14,7 +14,9 @@
     "test:e2e:fast": "PW_FAST=1 PW_WORKERS=${PW_WORKERS:-8} bunx playwright test --project=chromium --reporter=line",
     "test:e2e:ui": "bunx playwright test --ui",
     "test:e2e:debug": "bunx playwright test --debug",
-    "test:all": "bun run test && bun run test:e2e"
+    "test:all": "bun run test && bun run test:e2e",
+    "create:course": "DATABASE_URL='postgresql://postgres:postgres@localhost:5432/postgres?schema=public' node scripts/quick-course.js",
+    "create:course:advanced": "DATABASE_URL='postgresql://postgres:postgres@localhost:5432/postgres?schema=public' node scripts/create-course-basic.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.872.0",
