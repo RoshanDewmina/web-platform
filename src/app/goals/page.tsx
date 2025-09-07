@@ -91,7 +91,7 @@ export default function GoalsPage() {
     description: "",
     category: "learning",
     targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-    priority: "medium" as const,
+    priority: "medium" as "low" | "medium" | "high",
     milestones: [] as { title: string }[],
   });
 
@@ -184,7 +184,7 @@ export default function GoalsPage() {
       description: "",
       category: "learning",
       targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      priority: "medium",
+      priority: "medium" as "low" | "medium" | "high",
       milestones: [],
     });
     toast.success("Goal created successfully!");

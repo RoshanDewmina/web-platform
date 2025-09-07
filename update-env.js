@@ -13,3 +13,5 @@ content = content.replace(
 fs.writeFileSync('.env', content);
 
 console.log('Updated DATABASE_URL in .env file');
+
+

@@ -30,8 +30,8 @@ services:
     entrypoint: >
       /bin/sh -c "
       until mc alias set local http://minio:9000 minioadmin minioadmin; do echo 'waiting for minio...'; sleep 1; done && \
-      mc mb --ignore-existing local/uploads && \
-      mc anonymous set public local/uploads && \
+      mc mb --ignore-existing local/coursekit && \
+      mc anonymous set download local/coursekit/public/* && \
       echo 'MinIO bucket ready'"
 
   web:
@@ -45,6 +45,8 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    volumes:
+      - ./backups:/app/backups
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/web_platform?schema=public
       NEXT_PUBLIC_APP_URL: http://localhost:3000
@@ -53,13 +55,16 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
-      # S3 compatible storage via MinIO
-      S3_ENDPOINT: http://minio:9000
-      S3_REGION: us-east-1
-      S3_ACCESS_KEY_ID: minioadmin
-      S3_SECRET_ACCESS_KEY: minioadmin
-      S3_BUCKET: uploads
-    command: sh -c "npx prisma db push && npm run start"
+      # MinIO Configuration
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_SSL: "false"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: coursekit
+      # For internal Docker network
+      MINIO_PUBLIC_URL: http://localhost:9000
+    command: sh -c "echo '⏳ Waiting for database to be ready...' && until PGPASSWORD=postgres pg_isready -h db -U postgres; do sleep 1; done && echo '🔄 Creating database backup...' && mkdir -p /app/backups && PGPASSWORD=postgres pg_dump -h db -U postgres -d web_platform > /app/backups/backup_$(date +%Y%m%d_%H%M%S).sql && echo '✅ Backup created' && echo '🚀 Syncing database schema...' && npx prisma db push && echo '✅ Database sync complete' && npm run start"
 
   qdrant:
     image: qdrant/qdrant:latest

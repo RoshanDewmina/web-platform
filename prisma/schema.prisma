@@ -100,17 +100,25 @@ model Module {
 
 // Lesson model
 model Lesson {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   moduleId    String
   title       String
   description String?
-  content     Json // Rich text content
+  content     Json         // Rich text content (legacy)
   videoUrl    String?
-  duration    Int? // in minutes
+  duration    Int?         // in minutes
   orderIndex  Int
-  xpReward    Int      @default(10)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  xpReward    Int          @default(10)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // New content type fields
+  contentType     ContentType  @default(SLIDES)
+  mdxContent      String?      @db.Text
+  jsonBlocks      Json?
+  contentMetadata Json?
+  coverImage      String?
+  assets          Json[]
 
   // Relations
   module     Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -120,6 +128,7 @@ model Lesson {
   quizzes    Quiz[]
 
   @@index([moduleId])
+  @@index([contentType])
 }
 
 // Slide model - Enhanced with grid layout
@@ -533,6 +542,12 @@ enum GroupRole {
   ADMIN
   MODERATOR
   MEMBER
+}
+
+enum ContentType {
+  SLIDES
+  MDX
+  JSON_BLOCKS
 }
 
 // ==================== Enhanced Asset Management ====================
