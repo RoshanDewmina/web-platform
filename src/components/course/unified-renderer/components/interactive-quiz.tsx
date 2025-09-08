@@ -58,7 +58,7 @@ export default function InteractiveQuiz({
     let isCorrect = false;
     if (currentQ.type === "multiple_choice" || currentQ.type === "true_false") {
       isCorrect = selectedAnswer === String(currentQ.correctAnswer);
-    } else if (currentQ.type === "short_answer") {
+    } else if (currentQ.type === "short_answer" && typeof selectedAnswer === "string") {
       isCorrect = selectedAnswer.toLowerCase().trim() === String(currentQ.correctAnswer).toLowerCase().trim();
     }
 
@@ -202,7 +202,7 @@ export default function InteractiveQuiz({
         </div>
 
         {currentQ.type === "multiple_choice" && currentQ.options && (
-          <RadioGroup value={selectedAnswer} onValueChange={setSelectedAnswer}>
+          <RadioGroup value={typeof selectedAnswer === "string" ? selectedAnswer : ""} onValueChange={setSelectedAnswer}>
             {currentQ.options.map((option, idx) => (
               <div key={idx} className="flex items-center space-x-2 py-2">
                 <RadioGroupItem value={option} id={`option-${idx}`} />
@@ -215,7 +215,7 @@ export default function InteractiveQuiz({
         )}
 
         {currentQ.type === "true_false" && (
-          <RadioGroup value={selectedAnswer} onValueChange={setSelectedAnswer}>
+          <RadioGroup value={typeof selectedAnswer === "string" ? selectedAnswer : ""} onValueChange={setSelectedAnswer}>
             <div className="flex items-center space-x-2 py-2">
               <RadioGroupItem value="true" id="true" />
               <Label htmlFor="true" className="cursor-pointer">True</Label>
@@ -231,7 +231,7 @@ export default function InteractiveQuiz({
           <Input
             type="text"
             placeholder="Type your answer..."
-            value={selectedAnswer}
+            value={typeof selectedAnswer === "string" ? selectedAnswer : ""}
             onChange={(e) => setSelectedAnswer(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleAnswer()}
           />

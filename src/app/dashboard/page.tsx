@@ -35,6 +35,8 @@ import {
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { XPTracker } from "@/components/ui/xp-tracker";
 
 function StatCardSkeleton() {
   return (
@@ -70,15 +72,19 @@ function CourseCardSkeleton() {
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     currentStreak: 0,
     totalXP: 0,
     level: 1,
+    currentLevel: 1,
+    nextLevelXP: 100,
     coursesInProgress: 0,
     completedLessons: 0,
     studyMinutesToday: 0,
   });
+  const [recentXP, setRecentXP] = useState<any[]>([]);
   const [recentCourses, setRecentCourses] = useState<any[]>([]);
   const [upcomingActivities, setUpcomingActivities] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -94,9 +100,10 @@ export default function DashboardPage() {
       setLoading(true);
 
       // Fetch user stats
-      const [coursesResponse, progressResponse] = await Promise.all([
+      const [coursesResponse, progressResponse, userStatsResponse] = await Promise.all([
         fetch("/api/courses"),
         fetch("/api/progress"),
+        fetch("/api/users/stats"),
       ]);
 
       if (coursesResponse.ok && progressResponse.ok) {
@@ -111,27 +118,28 @@ export default function DashboardPage() {
           (p: any) => p.isCompleted
         ).length;
 
+        let userStats = null;
+        if (userStatsResponse.ok) {
+          userStats = await userStatsResponse.json();
+        }
+
         setStats({
-          currentStreak: 0, // TODO: Implement streak tracking
-          totalXP: progress.reduce(
-            (acc: number, p: any) => acc + (p.xpEarned || 0),
-            0
-          ),
-          level:
-            Math.floor(
-              progress.reduce(
-                (acc: number, p: any) => acc + (p.xpEarned || 0),
-                0
-              ) / 100
-            ) + 1,
+          currentStreak: userStats?.currentStreak || 0,
+          totalXP: userStats?.totalXP || 0,
+          level: userStats?.currentLevel || 1,
+          currentLevel: userStats?.currentLevel || 1,
+          nextLevelXP: userStats?.nextLevelXP || 100,
           coursesInProgress: enrolledCourses.length,
-          completedLessons,
-          studyMinutesToday:
-            progress.reduce(
-              (acc: number, p: any) => acc + (p.timeSpent || 0),
-              0
-            ) / 60,
+          completedLessons: userStats?.totalLessons || completedLessons,
+          studyMinutesToday: userStats?.averageDaily || 0,
         });
+
+        // Set recent XP gains (mock data for now - you can implement actual tracking)
+        setRecentXP([
+          { amount: 10, reason: "Completed Lesson", timestamp: new Date() },
+          { amount: 25, reason: "Passed Quiz", timestamp: new Date(Date.now() - 3600000) },
+          { amount: 50, reason: "Achievement Unlocked", timestamp: new Date(Date.now() - 7200000) },
+        ]);
 
         // Get recent courses with progress
         const recentCoursesData = enrolledCourses
@@ -301,6 +309,55 @@ export default function DashboardPage() {
                 </Card>
               </>
             )}
+          </div>
+
+          {/* XP Tracker Widget */}
+          <div className="grid gap-6 lg:grid-cols-7 mb-6">
+            <div className="lg:col-span-3">
+              {!loading && (
+                <XPTracker
+                  currentXP={stats.totalXP % 100}
+                  currentLevel={stats.currentLevel}
+                  nextLevelXP={stats.nextLevelXP}
+                  totalXP={stats.totalXP}
+                  recentXP={recentXP}
+                  showDetails={true}
+                />
+              )}
+            </div>
+            <div className="lg:col-span-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Achievement Progress</CardTitle>
+                  <CardDescription>
+                    Your journey to unlock new achievements
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Level Progress</span>
+                        <span className="text-sm text-muted-foreground">
+                          {Math.round((stats.totalXP % 100) / 100 * 100)}%
+                        </span>
+                      </div>
+                      <Progress value={(stats.totalXP % 100) / 100 * 100} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Next Achievement</p>
+                        <p className="font-medium">Week Warrior (3 days to go)</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Upcoming Reward</p>
+                        <p className="font-medium">+150 XP</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-7">

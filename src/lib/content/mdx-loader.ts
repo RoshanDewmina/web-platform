@@ -14,7 +14,7 @@ const mdxOptions = {
   ],
   rehypePlugins: [
     rehypeSlug, // Add IDs to headings
-    [rehypeAutolinkHeadings, { behavior: "wrap" }], // Add links to headings
+    [rehypeAutolinkHeadings, { behavior: "wrap" }] as any, // Add links to headings
     rehypeHighlight, // Syntax highlighting
   ],
 };
@@ -116,7 +116,7 @@ export function extractTextFromMDX(mdxContent: string): string {
     .replace(/\*\*([^*]+)\*\*/g, "$1") // Bold
     .replace(/\*([^*]+)\*/g, "$1") // Italic
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Links
-    .replace(/```[^`]*```/gs, "") // Code blocks
+    .replace(/```[\s\S]*?```/g, "") // Code blocks
     .replace(/`([^`]+)`/g, "$1") // Inline code
     .replace(/^\s*[-*+]\s/gm, "") // List markers
     .replace(/^\s*\d+\.\s/gm, "") // Numbered lists
@@ -178,6 +178,7 @@ export async function createMDXLesson(
       moduleId,
       title: metadata.title,
       description: metadata.summary,
+      content: {}, // Legacy field, required but not used for MDX
       contentType: "MDX",
       mdxContent,
       contentMetadata: metadata as any,
@@ -240,7 +241,13 @@ export async function importMDXFile(
       warnings.push("No cover image specified in frontmatter");
     }
     
-    if (!lesson.contentMetadata?.objectives || lesson.contentMetadata.objectives.length === 0) {
+    if (
+      !lesson.contentMetadata || 
+      typeof lesson.contentMetadata !== "object" ||
+      !("objectives" in lesson.contentMetadata) ||
+      !(lesson.contentMetadata as any).objectives ||
+      (lesson.contentMetadata as any).objectives.length === 0
+    ) {
       warnings.push("No learning objectives specified");
     }
     

@@ -41,7 +41,12 @@ export async function loadJSONBlocksLesson(lessonId: string) {
     throw new Error("Lesson does not contain JSON blocks content");
   }
 
-  const parsed = parseJSONBlocksContent(lesson.jsonBlocks);
+  // Ensure jsonBlocks is an object or string (Prisma Json type can be other types)
+  if (typeof lesson.jsonBlocks !== "string" && typeof lesson.jsonBlocks !== "object") {
+    throw new Error("Invalid JSON blocks format");
+  }
+
+  const parsed = parseJSONBlocksContent(lesson.jsonBlocks as string | object);
 
   return {
     lesson,
@@ -90,6 +95,7 @@ export async function createJSONBlocksLesson(
       moduleId,
       title: parsed.metadata.title,
       description: parsed.metadata.summary,
+      content: {}, // Legacy field, required but not used for JSON_BLOCKS
       contentType: "JSON_BLOCKS",
       jsonBlocks: parsed as any,
       contentMetadata: parsed.metadata as any,

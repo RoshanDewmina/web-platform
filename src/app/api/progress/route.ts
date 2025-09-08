@@ -5,38 +5,28 @@ import { prisma } from "@/lib/prisma";
 // POST /api/progress - Create or update progress tracking
 export async function POST(req: NextRequest) {
   try {
-    // For development, bypass authentication
-    let userId = 'dev-user';
+    const { userId } = await auth();
     
-    // Try to get real user ID if Clerk is configured
-    try {
-      const authResult = await auth();
-      if (authResult?.userId) {
-        userId = authResult.userId;
-      }
-    } catch (error) {
-      console.log('Running in development mode without Clerk');
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const body = await req.json();
     const { type, data } = body;
 
-    // Get or create user in database
-    let user = await prisma.user.findUnique({
+    // Get user from database
+    const user = await prisma.user.findUnique({
       where: { clerkId: userId },
     });
 
     if (!user) {
-      // Create dev user if not exists
-      user = await prisma.user.create({
-        data: {
-          clerkId: userId,
-          email: `${userId}@dev.local`,
-          username: userId,
-          xp: 0,
-          level: 1,
-        },
-      });
+      return NextResponse.json(
+        { error: 'User not found in database' },
+        { status: 404 }
+      );
     }
 
     switch (type) {
@@ -53,8 +43,25 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error("Progress tracking error:", error);
+    
+    // Better error handling with specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('P2002')) {
+        return NextResponse.json(
+          { error: "Progress record already exists" },
+          { status: 409 }
+        );
+      }
+      if (error.message.includes('P2025')) {
+        return NextResponse.json(
+          { error: "Record not found" },
+          { status: 404 }
+        );
+      }
+    }
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to track progress. Please try again later." },
       { status: 500 }
     );
   }
@@ -63,27 +70,35 @@ export async function POST(req: NextRequest) {
 // GET /api/progress?courseId=xxx - Get user progress for a course
 export async function GET(req: NextRequest) {
   try {
-    // For development, bypass authentication
-    let userId = 'dev-user';
+    const { userId } = await auth();
     
-    // Try to get real user ID if Clerk is configured
-    try {
-      const authResult = await auth();
-      if (authResult?.userId) {
-        userId = authResult.userId;
-      }
-    } catch (error) {
-      console.log('Running in development mode without Clerk');
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(req.url);
     const courseId = searchParams.get("courseId");
 
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found in database' },
+        { status: 404 }
+      );
+    }
+
     // If no courseId, return all progress for user
     if (!courseId) {
       // Get all progress records for the user
       const progress = await prisma.progress.findMany({
-        where: { userId },
+        where: { userId: user.id },
         include: {
           lesson: {
             include: {
@@ -97,24 +112,6 @@ export async function GET(req: NextRequest) {
         },
       });
       return NextResponse.json(progress);
-    }
-
-    // Get or create user in database
-    let user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-    });
-
-    if (!user) {
-      // Create dev user if not exists
-      user = await prisma.user.create({
-        data: {
-          clerkId: userId,
-          email: `${userId}@dev.local`,
-          username: userId,
-          xp: 0,
-          level: 1,
-        },
-      });
     }
 
     // Get analytics and latest session
@@ -152,8 +149,19 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Get progress error:", error);
+    
+    // Better error handling
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid')) {
+        return NextResponse.json(
+          { error: "Invalid course ID" },
+          { status: 400 }
+        );
+      }
+    }
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to fetch progress data. Please try again later." },
       { status: 500 }
     );
   }
@@ -162,6 +170,11 @@ export async function GET(req: NextRequest) {
 // Helper functions
 async function handleSessionStart(userId: string, data: any) {
   const { courseId, deviceInfo, totalSlides } = data;
+
+  // Validate required fields
+  if (!courseId) {
+    throw new Error("Course ID is required");
+  }
 
   // Create new session
   const session = await prisma.courseSession.create({
@@ -199,6 +212,11 @@ async function handleSessionStart(userId: string, data: any) {
 
 async function handleSessionEnd(userId: string, data: any) {
   const { sessionId, completedSlides } = data;
+
+  // Validate required fields
+  if (!sessionId) {
+    throw new Error("Session ID is required");
+  }
 
   const session = await prisma.courseSession.findFirst({
     where: {
@@ -249,6 +267,11 @@ async function handleSessionEnd(userId: string, data: any) {
 async function handleSlideView(userId: string, data: any) {
   const { sessionId, slideId, moduleId, subModuleId, timeSpent, scrollDepth, completed } = data;
 
+  // Validate required fields
+  if (!sessionId || !slideId) {
+    throw new Error("Session ID and Slide ID are required");
+  }
+
   // Check if slide view already exists
   const existingView = await prisma.slideView.findFirst({
     where: {
@@ -289,6 +312,11 @@ async function handleSlideView(userId: string, data: any) {
 
 async function handleInteraction(userId: string, data: any) {
   const { sessionId, slideId, eventType, eventName, eventData } = data;
+
+  // Validate required fields
+  if (!sessionId || !eventType || !eventName) {
+    throw new Error("Session ID, event type, and event name are required");
+  }
 
   // Create interaction event
   await prisma.interactionEvent.create({
@@ -339,4 +367,187 @@ async function calculateAverageSessionLength(userId: string, courseId: string) {
 
   const totalDuration = sessions.reduce((sum, s) => sum + s.totalDuration, 0);
   return Math.floor(totalDuration / sessions.length);
+}
+
+// PATCH /api/progress - Update progress record
+export async function PATCH(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json();
+    const { progressId, lessonId, updates } = body;
+
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update by progressId or by userId+lessonId
+    let progress;
+    if (progressId) {
+      progress = await prisma.progress.update({
+        where: { 
+          id: progressId,
+          userId: user.id // Ensure user owns this progress
+        },
+        data: {
+          ...updates,
+          lastAccessedAt: new Date()
+        }
+      });
+    } else if (lessonId) {
+      progress = await prisma.progress.update({
+        where: { 
+          userId_lessonId: {
+            userId: user.id,
+            lessonId
+          }
+        },
+        data: {
+          ...updates,
+          lastAccessedAt: new Date()
+        }
+      });
+    } else {
+      return NextResponse.json(
+        { error: 'Progress ID or Lesson ID is required' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(progress);
+  } catch (error) {
+    console.error("Update progress error:", error);
+    
+    if (error instanceof Error && error.message.includes('P2025')) {
+      return NextResponse.json(
+        { error: 'Progress record not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: "Failed to update progress" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/progress - Delete progress record (reset progress)
+export async function DELETE(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const progressId = searchParams.get("progressId");
+    const lessonId = searchParams.get("lessonId");
+    const courseId = searchParams.get("courseId");
+
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete specific progress record
+    if (progressId) {
+      await prisma.progress.delete({
+        where: { 
+          id: progressId,
+          userId: user.id // Ensure user owns this progress
+        }
+      });
+      return NextResponse.json({ success: true, message: "Progress deleted" });
+    }
+
+    // Delete progress for a specific lesson
+    if (lessonId) {
+      await prisma.progress.delete({
+        where: { 
+          userId_lessonId: {
+            userId: user.id,
+            lessonId
+          }
+        }
+      });
+      return NextResponse.json({ success: true, message: "Lesson progress deleted" });
+    }
+
+    // Delete all progress for a course
+    if (courseId) {
+      const lessons = await prisma.lesson.findMany({
+        where: {
+          module: {
+            courseId
+          }
+        },
+        select: { id: true }
+      });
+
+      await prisma.progress.deleteMany({
+        where: {
+          userId: user.id,
+          lessonId: {
+            in: lessons.map(l => l.id)
+          }
+        }
+      });
+      
+      // Also reset course analytics
+      await prisma.courseAnalytics.deleteMany({
+        where: {
+          userId: user.id,
+          courseId
+        }
+      });
+      
+      return NextResponse.json({ success: true, message: "Course progress reset" });
+    }
+
+    return NextResponse.json(
+      { error: 'Progress ID, Lesson ID, or Course ID is required' },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error("Delete progress error:", error);
+    
+    if (error instanceof Error && error.message.includes('P2025')) {
+      return NextResponse.json(
+        { error: 'Progress record not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: "Failed to delete progress" },
+      { status: 500 }
+    );
+  }
 }

@@ -50,7 +50,7 @@ export const QuizQuestion = z.object({
 });
 
 // Unified content blocks that can be used in both MDX and JSON
-export const UnifiedContentBlock = z.discriminatedUnion("type", [
+export const UnifiedContentBlock: z.ZodType<any> = z.discriminatedUnion("type", [
   // Text blocks
   z.object({ 
     type: z.literal("heading"), 
@@ -118,7 +118,7 @@ export const UnifiedContentBlock = z.discriminatedUnion("type", [
   z.object({ 
     type: z.literal("interactive"), 
     componentId: z.string(), // Reference to custom component
-    props: z.record(z.any()),
+    props: z.record(z.string(), z.any()),
     fallback: z.string().optional(), // Fallback content
   }),
   
@@ -338,32 +338,32 @@ export function extractTextFromBlocks(blocks: UnifiedContentBlock[]): string {
         if (block.caption) textParts.push(block.caption);
         break;
       case "quiz":
-        block.questions.forEach(q => {
+        block.questions.forEach((q: QuizQuestion) => {
           textParts.push(q.question);
           if (q.options) textParts.push(...q.options);
           if (q.explanation) textParts.push(q.explanation);
         });
         break;
       case "columns":
-        block.columns.forEach(col => {
+        block.columns.forEach((col: any) => {
           textParts.push(extractTextFromBlocks(col));
         });
         break;
       case "accordion":
-        block.items.forEach(item => {
+        block.items.forEach((item: any) => {
           textParts.push(item.title);
           textParts.push(extractTextFromBlocks(item.content));
         });
         break;
       case "tabs":
-        block.tabs.forEach(tab => {
+        block.tabs.forEach((tab: any) => {
           textParts.push(tab.label);
           textParts.push(extractTextFromBlocks(tab.content));
         });
         break;
       case "table":
         textParts.push(...block.headers);
-        block.rows.forEach(row => textParts.push(...row));
+        block.rows.forEach((row: any) => textParts.push(...row));
         break;
     }
   });

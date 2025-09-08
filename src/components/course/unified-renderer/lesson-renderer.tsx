@@ -86,7 +86,7 @@ export function UnifiedLessonRenderer({
   React.useEffect(() => {
     if (contentType === "SLIDES") {
       import("@/app/learn/course/[courseId]/_components/slide-renderer").then((module) => {
-        setSlideRenderer(() => module.default);
+        setSlideRenderer(() => module.SlideRenderer);
       });
     }
   }, [contentType]);

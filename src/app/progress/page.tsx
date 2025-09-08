@@ -56,214 +56,192 @@ import { useUser } from "@clerk/nextjs";
 import { LeaderboardCard } from "./_components/leaderboard";
 import { Heatmap } from "./_components/heatmap";
 import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProgressPage() {
   const { user } = useUser();
   const [daily, setDaily] = useState<{ date: string; minutes: number }[]>([]);
   const [byDow, setByDow] = useState<any[]>([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  const [progressData, setProgressData] = useState<any>(null);
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    const load = async () => {
-      setLoadingAnalytics(true);
+    
+    const loadAllData = async () => {
+      if (!user?.id) return;
+      
+      setLoading(true);
+      setError(null);
+      
       try {
-        const res = await fetch("/api/analytics/progress?rangeDays=120");
-        if (res.ok) {
-          const data = await res.json();
+        // Load analytics data
+        const analyticsRes = await fetch("/api/analytics/progress?rangeDays=120");
+        if (analyticsRes.ok) {
+          const analyticsData = await analyticsRes.json();
           if (mounted) {
             setDaily(
-              (data.daily || []).map((d: any) => ({
+              (analyticsData.daily || []).map((d: any) => ({
                 date: d.date,
                 minutes: d.minutes,
               }))
             );
-            setByDow(data.byDow || []);
+            setByDow(analyticsData.byDow || []);
           }
         }
+
+        // Load progress data
+        const progressRes = await fetch("/api/progress");
+        if (progressRes.ok) {
+          const progress = await progressRes.json();
+          if (mounted) {
+            setProgressData(progress);
+          }
+        }
+
+        // Load enrolled courses with progress
+        const coursesRes = await fetch("/api/courses?enrolled=true");
+        if (coursesRes.ok) {
+          const courses = await coursesRes.json();
+          if (mounted) {
+            setEnrolledCourses(courses);
+          }
+        }
+
+        // Load achievements
+        const achievementsRes = await fetch("/api/achievements");
+        if (achievementsRes.ok) {
+          const achievementsData = await achievementsRes.json();
+          if (mounted) {
+            setAchievements(achievementsData);
+          }
+        }
+
+        // Load user stats
+        const statsRes = await fetch("/api/users/stats");
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          if (mounted) {
+            setStats(statsData);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading progress data:", err);
+        if (mounted) {
+          setError("Failed to load progress data. Please try again later.");
+        }
       } finally {
-        setLoadingAnalytics(false);
+        if (mounted) {
+          setLoading(false);
+          setLoadingAnalytics(false);
+        }
       }
     };
-    load();
+
+    loadAllData();
+    
     return () => {
       mounted = false;
     };
   }, [user?.id]);
 
-  // Mock data - will be replaced with real data from API
-  const weeklyData = [
-    { day: "Mon", minutes: 45, xp: 120 },
-    { day: "Tue", minutes: 60, xp: 150 },
-    { day: "Wed", minutes: 30, xp: 80 },
-    { day: "Thu", minutes: 90, xp: 200 },
-    { day: "Fri", minutes: 75, xp: 180 },
-    { day: "Sat", minutes: 120, xp: 300 },
-    { day: "Sun", minutes: 60, xp: 150 },
-  ];
+  // Process data for charts
+  const weeklyData = byDow.map((d) => ({
+    day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.dow],
+    minutes: d.minutes,
+    xp: Math.round(d.minutes * 2.5), // Approximate XP based on time
+  }));
 
-  const skillsData = [
-    { subject: "React", level: 85 },
-    { subject: "TypeScript", level: 70 },
-    { subject: "Node.js", level: 60 },
-    { subject: "Python", level: 45 },
-    { subject: "Data Science", level: 30 },
-    { subject: "UI/UX", level: 55 },
-  ];
+  // Calculate course progress from enrolled courses
+  const courseProgress = enrolledCourses.map((course) => ({
+    name: course.title,
+    value: course.enrollment?.progress || 0,
+    color: [
+      "#3B82F6",
+      "#8B5CF6",
+      "#10B981",
+      "#F59E0B",
+      "#EF4444",
+      "#6366F1",
+    ][enrolledCourses.indexOf(course) % 6],
+  }));
 
-  const courseProgress = [
-    { name: "React", value: 75, color: "#3B82F6" },
-    { name: "TypeScript", value: 40, color: "#8B5CF6" },
-    { name: "Algorithms", value: 60, color: "#10B981" },
-    { name: "Python", value: 25, color: "#F59E0B" },
-  ];
+  // Calculate skills from course categories
+  const skillsData = enrolledCourses.reduce((acc: any[], course) => {
+    const existing = acc.find((s) => s.subject === course.category);
+    if (existing) {
+      existing.level = Math.min(
+        100,
+        existing.level + (course.enrollment?.progress || 0) / 2
+      );
+    } else {
+      acc.push({
+        subject: course.category,
+        level: (course.enrollment?.progress || 0) / 2,
+      });
+    }
+    return acc;
+  }, []);
 
-  const achievements = [
-    {
-      id: "1",
-      name: "First Steps",
-      description: "Complete your first lesson",
-      icon: "👟",
-      category: "progress",
-      earned: true,
-      earnedDate: "2024-01-15",
-      xpReward: 50,
-    },
-    {
-      id: "2",
-      name: "Quick Learner",
-      description: "Complete 5 lessons in one day",
-      icon: "⚡",
-      category: "progress",
-      earned: true,
-      earnedDate: "2024-01-18",
-      xpReward: 100,
-    },
-    {
-      id: "3",
-      name: "Social Butterfly",
-      description: "Add 5 friends",
-      icon: "🦋",
-      category: "social",
-      earned: true,
-      earnedDate: "2024-01-20",
-      xpReward: 75,
-    },
-    {
-      id: "4",
-      name: "Week Warrior",
-      description: "Maintain a 7-day streak",
-      icon: "🔥",
-      category: "streak",
-      earned: true,
-      earnedDate: "2024-01-22",
-      xpReward: 150,
-    },
-    {
-      id: "5",
-      name: "Perfect Score",
-      description: "Get 100% on any quiz",
-      icon: "💯",
-      category: "skill",
-      earned: true,
-      earnedDate: "2024-01-25",
-      xpReward: 200,
-    },
-    {
-      id: "6",
-      name: "Marathon Runner",
-      description: "Study for 5 hours in one day",
-      icon: "🏃",
-      category: "time",
-      earned: false,
-      xpReward: 300,
-    },
-    {
-      id: "7",
-      name: "Course Master",
-      description: "Complete an entire course",
-      icon: "🎓",
-      category: "progress",
-      earned: false,
-      xpReward: 500,
-    },
-    {
-      id: "8",
-      name: "Team Player",
-      description: "Join 3 study groups",
-      icon: "🤝",
-      category: "social",
-      earned: false,
-      xpReward: 150,
-    },
-  ];
-
-  const leaderboard = [
-    {
-      rank: 1,
-      name: "Alice Johnson",
-      xp: 5420,
-      level: 25,
-      avatar: "/api/placeholder/40/40",
-      trend: "up",
-    },
-    {
-      rank: 2,
-      name: "Bob Smith",
-      xp: 5180,
-      level: 24,
-      avatar: "/api/placeholder/40/40",
-      trend: "up",
-    },
-    {
-      rank: 3,
-      name: "Carol White",
-      xp: 4950,
-      level: 23,
-      avatar: "/api/placeholder/40/40",
-      trend: "down",
-    },
-    {
-      rank: 4,
-      name: "David Lee",
-      xp: 4720,
-      level: 22,
-      avatar: "/api/placeholder/40/40",
-      trend: "same",
-    },
-    {
-      rank: 5,
-      name: "Emma Wilson",
-      xp: 4500,
-      level: 21,
-      avatar: "/api/placeholder/40/40",
-      trend: "up",
-    },
-    {
-      rank: 15,
-      name: "You",
-      xp: 2450,
-      level: 12,
-      avatar: user?.imageUrl,
-      trend: "up",
-      isCurrentUser: true,
-    },
-  ];
-
-  const stats = {
-    totalXP: 2450,
-    currentLevel: 12,
-    nextLevelXP: 3000,
-    currentStreak: 7,
-    longestStreak: 14,
-    totalLessons: 48,
-    totalQuizzes: 23,
-    perfectQuizzes: 5,
-    totalMinutes: 1380,
-    averageDaily: 45,
-    friendsCount: 12,
-    groupsJoined: 2,
+  // Use actual stats or defaults
+  const displayStats = stats || {
+    totalXP: 0,
+    currentLevel: 1,
+    nextLevelXP: 100,
+    currentStreak: 0,
+    longestStreak: 0,
+    totalLessons: 0,
+    totalQuizzes: 0,
+    perfectQuizzes: 0,
+    totalMinutes: 0,
+    averageDaily: 0,
+    friendsCount: 0,
+    groupsJoined: 0,
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold">Progress & Achievements</h1>
+            <p className="text-muted-foreground mt-2">
+              Track your learning journey and celebrate milestones
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader className="space-y-0 pb-2">
+                  <Skeleton className="h-4 w-24" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-32 mb-2" />
+                  <Skeleton className="h-2 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-[50vh]">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -285,15 +263,15 @@ export default function ProgressPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats.totalXP.toLocaleString()}
+                {displayStats.totalXP.toLocaleString()}
               </div>
               <Progress
-                value={(stats.totalXP / stats.nextLevelXP) * 100}
+                value={(displayStats.totalXP / displayStats.nextLevelXP) * 100}
                 className="mt-2"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {stats.nextLevelXP - stats.totalXP} XP to level{" "}
-                {stats.currentLevel + 1}
+                {displayStats.nextLevelXP - displayStats.totalXP} XP to level{" "}
+                {displayStats.currentLevel + 1}
               </p>
             </CardContent>
           </Card>
@@ -307,10 +285,10 @@ export default function ProgressPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats.currentStreak} days
+                {displayStats.currentStreak} days
               </div>
               <p className="text-xs text-muted-foreground">
-                Longest: {stats.longestStreak} days
+                Longest: {displayStats.longestStreak} days
               </p>
             </CardContent>
           </Card>
@@ -323,9 +301,9 @@ export default function ProgressPage() {
               <BookOpen className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalLessons}</div>
+              <div className="text-2xl font-bold">{displayStats.totalLessons}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.totalQuizzes} quizzes passed
+                {displayStats.totalQuizzes} quizzes passed
               </p>
             </CardContent>
           </Card>
@@ -337,10 +315,10 @@ export default function ProgressPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {Math.round(stats.totalMinutes / 60)}h
+                {Math.round(displayStats.totalMinutes / 60)}h
               </div>
               <p className="text-xs text-muted-foreground">
-                ~{stats.averageDaily} min/day average
+                ~{displayStats.averageDaily} min/day average
               </p>
             </CardContent>
           </Card>
@@ -456,37 +434,45 @@ export default function ProgressPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {achievements.map((achievement) => (
-                    <div
-                      key={achievement.id}
-                      className={`relative p-4 rounded-lg border-2 text-center transition-all hover:scale-105 ${
-                        achievement.earned
-                          ? "border-primary bg-primary/5"
-                          : "border-muted opacity-50 grayscale"
-                      }`}
-                    >
-                      <div className="text-3xl mb-2">{achievement.icon}</div>
-                      <h3 className="font-semibold text-sm">
-                        {achievement.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {achievement.description}
+                  {achievements.length === 0 ? (
+                    <div className="col-span-full text-center py-8">
+                      <p className="text-muted-foreground">
+                        No achievements yet. Keep learning to earn your first achievement!
                       </p>
-                      <Badge
-                        className="mt-2"
-                        variant={achievement.earned ? "default" : "secondary"}
-                      >
-                        {achievement.xpReward} XP
-                      </Badge>
-                      {achievement.earned && achievement.earnedDate && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(
-                            achievement.earnedDate
-                          ).toLocaleDateString()}
-                        </p>
-                      )}
                     </div>
-                  ))}
+                  ) : (
+                    achievements.map((achievement) => (
+                      <div
+                        key={achievement.id}
+                        className={`relative p-4 rounded-lg border-2 text-center transition-all hover:scale-105 ${
+                          achievement.earned
+                            ? "border-primary bg-primary/5"
+                            : "border-muted opacity-50 grayscale"
+                        }`}
+                      >
+                        <div className="text-3xl mb-2">{achievement.icon}</div>
+                        <h3 className="font-semibold text-sm">
+                          {achievement.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {achievement.description}
+                        </p>
+                        <Badge
+                          className="mt-2"
+                          variant={achievement.earned ? "default" : "secondary"}
+                        >
+                          {achievement.xpReward} XP
+                        </Badge>
+                        {achievement.earned && achievement.earnedDate && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(
+                              achievement.earnedDate
+                            ).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -511,7 +497,7 @@ export default function ProgressPage() {
                         Total Study Time
                       </span>
                       <span className="font-medium">
-                        {Math.round(stats.totalMinutes / 60)} hours
+                        {Math.round(displayStats.totalMinutes / 60)} hours
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -519,27 +505,27 @@ export default function ProgressPage() {
                         Average Daily Time
                       </span>
                       <span className="font-medium">
-                        {stats.averageDaily} minutes
+                        {displayStats.averageDaily} minutes
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">
                         Lessons Completed
                       </span>
-                      <span className="font-medium">{stats.totalLessons}</span>
+                      <span className="font-medium">{displayStats.totalLessons}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">
                         Quizzes Passed
                       </span>
-                      <span className="font-medium">{stats.totalQuizzes}</span>
+                      <span className="font-medium">{displayStats.totalQuizzes}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">
                         Perfect Scores
                       </span>
                       <span className="font-medium">
-                        {stats.perfectQuizzes}
+                        {displayStats.perfectQuizzes}
                       </span>
                     </div>
                   </div>
@@ -556,20 +542,20 @@ export default function ProgressPage() {
                       <span className="text-sm text-muted-foreground">
                         Friends
                       </span>
-                      <span className="font-medium">{stats.friendsCount}</span>
+                      <span className="font-medium">{displayStats.friendsCount}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">
                         Study Groups
                       </span>
-                      <span className="font-medium">{stats.groupsJoined}</span>
+                      <span className="font-medium">{displayStats.groupsJoined}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">
                         Current Streak
                       </span>
                       <span className="font-medium">
-                        {stats.currentStreak} days
+                        {displayStats.currentStreak} days
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -577,7 +563,7 @@ export default function ProgressPage() {
                         Longest Streak
                       </span>
                       <span className="font-medium">
-                        {stats.longestStreak} days
+                        {displayStats.longestStreak} days
                       </span>
                     </div>
                     <div className="flex justify-between">

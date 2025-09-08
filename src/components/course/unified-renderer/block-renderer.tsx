@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { UnifiedContentBlock } from "@/types/unified-content";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -26,7 +27,7 @@ export function BlockRenderer({ blocks, className }: BlockRendererProps) {
     switch (block.type) {
       // Text blocks
       case "heading":
-        const HeadingTag = `h${block.level}` as keyof JSX.IntrinsicElements;
+        const HeadingTag = `h${block.level}` as keyof React.JSX.IntrinsicElements;
         return (
           <HeadingTag
             key={index}
@@ -61,7 +62,7 @@ export function BlockRenderer({ blocks, className }: BlockRendererProps) {
               block.className
             )}
           >
-            {block.items.map((item, i) => (
+            {block.items.map((item: string, i: number) => (
               <li key={i} className="leading-relaxed">
                 {item}
               </li>
@@ -185,7 +186,7 @@ export function BlockRenderer({ blocks, className }: BlockRendererProps) {
             )}
             style={{ gap: `${block.gap}rem` }}
           >
-            {block.columns.map((column, colIndex) => (
+            {block.columns.map((column: UnifiedContentBlock[], colIndex: number) => (
               <div key={colIndex}>
                 <BlockRenderer blocks={column} />
               </div>

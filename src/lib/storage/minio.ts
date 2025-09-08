@@ -117,8 +117,7 @@ export class AssetStorage {
     await minioClient.copyObject(
       BUCKET,
       destKey,
-      `/${BUCKET}/${sourceKey}`,
-      null
+      `/${BUCKET}/${sourceKey}`
     );
   }
 
@@ -130,7 +129,9 @@ export class AssetStorage {
     const stream = minioClient.listObjects(BUCKET, prefix, recursive);
     
     return new Promise((resolve, reject) => {
-      stream.on("data", (obj) => objects.push(obj.name));
+      stream.on("data", (obj) => {
+        if (obj.name) objects.push(obj.name);
+      });
       stream.on("end", () => resolve(objects));
       stream.on("error", reject);
     });

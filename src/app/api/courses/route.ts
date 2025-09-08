@@ -6,23 +6,32 @@ import { Prisma } from '@prisma/client';
 // GET /api/courses - Get all courses or filtered courses
 export async function GET(request: NextRequest) {
   try {
-    // For development, bypass authentication
-    let userId = 'dev-user';
+    const { userId } = await auth();
     
-    // Try to get real user ID if Clerk is configured
-    try {
-      const authResult = await auth();
-      if (authResult?.userId) {
-        userId = authResult.userId;
-      }
-    } catch (error) {
-      console.log('Running in development mode without Clerk');
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Ensure user exists in database
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
     }
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
     const category = searchParams.get('category');
     const isAdmin = searchParams.get('admin') === 'true';
+    const enrolledOnly = searchParams.get('enrolled') === 'true';
 
     const where: any = {};
     
@@ -32,6 +41,15 @@ export async function GET(request: NextRequest) {
     
     if (category) {
       where.category = category;
+    }
+
+    // If enrolled filter is active, add enrollment condition
+    if (enrolledOnly) {
+      where.enrollments = {
+        some: {
+          userId: user.id
+        }
+      };
     }
 
     // If not admin, only show published and visible courses, and not before schedule
@@ -68,7 +86,7 @@ export async function GET(request: NextRequest) {
         },
         enrollments: {
           where: {
-            userId: userId,
+            userId: user.id,
           },
         },
         _count: {
@@ -82,7 +100,13 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(courses);
+    // Map courses to include enrollment data
+    const coursesWithEnrollment = courses.map(course => ({
+      ...course,
+      enrollment: course.enrollments[0] || null
+    }));
+
+    return NextResponse.json(coursesWithEnrollment);
   } catch (error) {
     console.error('Error fetching courses:', error);
     return NextResponse.json(

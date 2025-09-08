@@ -14,8 +14,35 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { XPTracker } from '@/components/ui/xp-tracker';
+import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 
 export function Navbar() {
+  const { user } = useUser();
+  const [userStats, setUserStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const res = await fetch('/api/users/stats');
+        if (res.ok) {
+          const data = await res.json();
+          setUserStats(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserStats();
+  }, [user?.id]);
+
   return (
     <div className='flex items-center p-4 border-b'>
       <MobileSidebar />
@@ -32,6 +59,17 @@ export function Navbar() {
         </div>
         
         <div className='flex items-center gap-2 ml-4'>
+          {/* XP Tracker */}
+          {!loading && userStats && (
+            <XPTracker
+              currentXP={userStats.totalXP % 100}
+              currentLevel={userStats.currentLevel}
+              nextLevelXP={userStats.nextLevelXP}
+              totalXP={userStats.totalXP}
+              compact={true}
+              className="mr-2"
+            />
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant='ghost' size='icon' className='relative'>
